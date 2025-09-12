@@ -1,6 +1,7 @@
 {
 	"name": "rdcstarr/laravel-settings",
 	"description": "A simple settings package for Laravel.",
+	"type": "library",
 	"keywords": [
 		"Rdcstarr",
 		"laravel",
@@ -17,7 +18,7 @@
 	],
 	"require": {
 		"php": "^8.0",
-        "spatie/laravel-package-tools": "^1.16",
+		"spatie/laravel-package-tools": "^1.16",
 		"illuminate/contracts": "^11.0||^12.0"
 	},
 	"require-dev": {
@@ -70,7 +71,5 @@
 				"Settings": "Rdcstarr\\Settings\\Facades\\Settings"
 			}
 		}
-	},
-	"minimum-stability": "dev",
-	"prefer-stable": true
+	}
 }

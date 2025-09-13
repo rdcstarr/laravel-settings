@@ -84,15 +84,15 @@ settings()->flushCache();          // clear cache
 ## 🎨 Blade Directives
 ```php
 {{-- Simple --}}
-@setting('app_name', 'Default')
+@settings('app_name', 'Default')
 
 {{-- Grouped --}}
-@settingGroup('mail', 'driver', 'smtp')
+@settingsGroup('mail', 'driver', 'smtp')
 
 {{-- Conditional --}}
-@hassetting('maintenance_mode')
+@hasSettings('maintenance_mode')
     <div class="alert">Maintenance mode active</div>
-@endhassetting
+@endhasSettings
 ```
 
 ## 💡 Examples

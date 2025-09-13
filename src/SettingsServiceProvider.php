@@ -20,11 +20,11 @@ class SettingsServiceProvider extends PackageServiceProvider
 	{
 		parent::boot();
 
-		// @setting('key', 'default') -> echoes a value from the default group
-		Blade::directive('setting', fn($expression) => "<?php echo e(settings()->get($expression)); ?>");
+		// @settings('key', 'default') -> echoes a value from the default group
+		Blade::directive('settings', fn($expression) => "<?php echo e(settings()->get($expression)); ?>");
 
-		// @settingGroup('group', 'key', 'default') -> echoes a value from a specific group
-		Blade::directive('settingGroup', function ($expression)
+		// @settingsGroup('group', 'key', 'default') -> echoes a value from a specific group
+		Blade::directive('settingsGroup', function ($expression)
 		{
 			$parts = explode(',', $expression, 2);
 			$group = trim($parts[0] ?? '');
@@ -32,8 +32,8 @@ class SettingsServiceProvider extends PackageServiceProvider
 			return "<?php echo e(settings()->group($group)->get($args)); ?>";
 		});
 
-		// @hassetting('key') or @hassetting('key', 'group')
-		Blade::if('hassetting', function ($key, $group = null)
+		// @hasSettings('key') or @hasSettings('key', 'group')
+		Blade::if('hasSettings', function ($key, $group = null)
 		{
 			$settings = settings();
 			if ($group)

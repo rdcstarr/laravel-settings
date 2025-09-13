@@ -3,10 +3,10 @@
 if (!function_exists('settings'))
 {
 	/**
-	 * Get app setting stored in db.
+	 * Get or set app settings stored in db.
 	 *
-	 * @param $key
-	 * @param  mixed  $default
+	 * @param mixed $key
+	 * @param mixed $default
 	 * @return mixed
 	 */
 	function settings($key = null, $default = null)
@@ -18,6 +18,6 @@ if (!function_exists('settings'))
 			return $setting;
 		}
 
-		return $setting->get($key, value($default));
+		return $setting->get($key, $default);
 	}
 }

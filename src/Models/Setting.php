@@ -10,7 +10,6 @@ use Illuminate\Support\Str;
 class Setting extends Model
 {
 	protected $fillable = [
-		'group',
 		'key',
 		'value',
 	];
@@ -20,13 +19,7 @@ class Setting extends Model
 		'updated_at' => 'datetime',
 	];
 
-	/**
-	 * Scope a query to only include settings of a given group.
-	 */
-	public function scopeGroup($query, $groupName)
-	{
-		return $query->whereGroup($groupName);
-	}
+	protected $primaryKey = 'key';
 
 	/**
 	 * Cast value to appropriate type when retrieving.

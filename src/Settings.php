@@ -9,26 +9,24 @@ use Rdcstarr\Settings\Models\Setting;
 
 class Settings
 {
-	protected string $group = 'default';
-	protected string $settingsCacheKey = 'app_settings';
-
 	/**
 	 * Cache for the current request (RAM)
 	 */
-	private Collection $cache;
+	protected ?Collection $cache = null;
+	protected string $settingsCacheKey = 'app_settings:';
 
 	/**
-	 * Retrieves all settings for the current group from cache or database.
+	 * Retrieves all settings from cache or database.
 	 *
 	 * @return Collection The collection of settings as key-value pairs.
 	 */
 	public function all(): Collection
 	{
-		return $this->cache ??= Cache::rememberForever($this->getSettingsCacheKey(), fn() => Setting::group($this->group)->pluck('value', 'key'));
+		return $this->cache ??= Cache::forever($this->settingsCacheKey, fn() => Setting::all()->pluck('value', 'key'));
 	}
 
 	/**
-	 * Gets the value of a specific setting key for the current group.
+	 * Gets the value of a specific setting key.
 	 *
 	 * @param string $key The setting key to retrieve.
 	 * @param mixed $default The default value to return if the key does not exist.
@@ -40,47 +38,32 @@ class Settings
 	}
 
 	/**
-	 * Sets the value for a specific setting key or multiple keys for the current group.
+	 * Sets the value for a specific setting key or multiple keys.
 	 *
 	 * @param string|array $key The setting key or an array of key-value pairs.
 	 * @param mixed $val The value to set for the key (ignored if $key is array).
 	 * @return bool True on success, false on failure.
+	 * @throws Exception If database operation fails.
 	 */
 	public function set(string|array $key, mixed $val = null): bool
 	{
-		try
+		if (is_array($key))
 		{
-			if (is_array($key))
-			{
-				$this->setBatch($key);
-				return true;
-			}
-
-			Setting::updateOrCreate(
-				[
-					'key'   => $key,
-					'group' => $this->group,
-				],
-				[
-					'value' => $val,
-				]
-			);
-
-			$cacheKey = $this->getSettingsCacheKey();
-			$cached   = Cache::get($cacheKey, collect());
-			$cached->put($key, $val);
-			Cache::forever($cacheKey, $cached);
-
-			return true;
+			return $this->setBatch($key);
 		}
-		catch (Exception $e)
-		{
-			return false;
-		}
+
+		$setting = Setting::updateOrCreate(
+			['key' => $key],
+			['value' => $val]
+		);
+
+		$setting && $this->updateCacheDirectly(keysToAdd: [$key => $val]);
+
+		return (bool) $setting;
 	}
 
 	/**
-	 * Checks if a specific setting key exists in the current group.
+	 * Checks if a specific setting key exists.
 	 *
 	 * @param string $key The setting key to check.
 	 * @return bool True if the key exists, false otherwise.
@@ -91,108 +74,82 @@ class Settings
 	}
 
 	/**
-	 * Removes a specific setting key from the current group.
+	 * Removes a specific setting key.
 	 *
 	 * @param string $key The setting key to remove.
-	 * @return bool True on success, false on failure.
+	 * @return bool True if the key was deleted, false if no key was found.
+	 * @throws Exception If database operation fails.
 	 */
 	public function forget(string $key): bool
 	{
-		try
-		{
-			Setting::where('key', $key)
-				->group($this->group)
-				->delete();
+		$deleted = Setting::whereKey($key)->delete();
+		$deleted && $this->updateCacheDirectly(keysToRemove: [$key]);
 
-			$this->flushCache();
-
-			return true;
-		}
-		catch (Exception)
-		{
-			return false;
-		}
+		return (bool) $deleted;
 	}
 
 	/**
-	 * Flushes the settings cache for the current group.
+	 * Flushes the settings cache.
 	 *
 	 * @return bool True on success, false on failure.
 	 */
 	public function flushCache(): bool
 	{
-		try
-		{
-			Cache::forget($this->getSettingsCacheKey());
-			unset($this->cache);
-			$this->all();
+		$cache = Cache::forget($this->settingsCacheKey);
+		$cache && $this->cache = null;
 
-			return true;
-		}
-		catch (Exception)
-		{
-			return false;
-		}
+		return (bool) $cache;
 	}
 
 	/**
-	 * Sets the group context for subsequent settings operations.
-	 *
-	 * @param string $groupName The name of the group to set.
-	 * @return static The current instance for method chaining.
-	 */
-	public function group(string $groupName): static
-	{
-		if ($this->group !== $groupName)
-		{
-			unset($this->cache);
-			$this->group = $groupName;
-		}
-
-		return $this;
-	}
-
-	/**
-	 * Sets multiple settings in batch for the current group.
+	 * Sets multiple settings in batch.
 	 *
 	 * @param array $settings An associative array of key-value pairs to set.
 	 * @return bool True on success, false on failure.
+	 * @throws Exception If database operation fails.
 	 */
 	protected function setBatch(array $settings): bool
 	{
-		try
-		{
-			$data = collect($settings)->map(fn($value, $key) => [
-				'key'        => $key,
-				'group'      => $this->group,
-				'value'      => $value,
-				'created_at' => now(),
-				'updated_at' => now(),
-			])->values()->toArray();
+		$data = collect($settings)->map(fn($value, $key) => [
+			'key'        => $key,
+			'value'      => $value,
+			'created_at' => now(),
+			'updated_at' => now(),
+		])->values()->toArray();
 
-			Setting::upsert(
-				$data,
-				['key', 'group'],
-				['value', 'updated_at']
-			);
+		$setting = Setting::upsert($data, ['key'], ['value', 'updated_at']);
+		$setting && $this->updateCacheDirectly(keysToAdd: $settings);
 
-			$this->flushCache();
-
-			return true;
-		}
-		catch (Exception)
-		{
-			return false;
-		}
+		return (bool) $setting;
 	}
 
 	/**
-	 * Generates the cache key for the current group.
+	 * Updates the cache by adding or removing specific keys without flushing the entire cache.
 	 *
-	 * @return string The cache key string.
+	 * @param array $keysToAdd Associative array of keys to add/update
+	 * @param array $keysToRemove Array of keys to remove
+	 * @return void
 	 */
-	protected function getSettingsCacheKey(): string
+	protected function updateCacheDirectly(array $keysToAdd = [], array $keysToRemove = []): void
 	{
-		return "{$this->settingsCacheKey}.{$this->group}";
+		$cached = Cache::get($this->settingsCacheKey);
+
+		if (!$cached instanceof Collection)
+		{
+			$this->flushCache();
+			return;
+		}
+
+		$updater = fn(Collection $cache) => $cache
+			->when(!empty($keysToRemove), fn($c) => $c->except($keysToRemove))
+			->when(!empty($keysToAdd), fn($c) => $c->merge($keysToAdd));
+
+		Cache::forever($this->settingsCacheKey, $updater($cached));
+
+		// Update RAM cache if it exists
+		if (isset($this->cache))
+		{
+			$this->cache = $updater($this->cache);
+		}
 	}
 }

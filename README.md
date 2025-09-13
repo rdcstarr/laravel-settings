@@ -1,44 +1,42 @@
-# Sample laravel settings package.
+# Laravel Settings
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/rdcstarr/laravel-settings.svg?style=flat-square)](https://packagist.org/packages/rdcstarr/laravel-settings)
-[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/rdcstarr/laravel-settings/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/rdcstarr/laravel-settings/actions?query=workflow%3Arun-tests+branch%3Amain)
-[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/rdcstarr/laravel-settings/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/rdcstarr/laravel-settings/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
-[![Total Downloads](https://img.shields.io/packagist/dt/rdcstarr/laravel-settings.svg?style=flat-square)](https://packagist.org/packages/rdcstarr/laravel-settings)
+[![Tests](https://img.shields.io/github/actions/workflow/status/rdcstarr/laravel-settings/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/rdcstarr/laravel-settings/actions)
+[![Code Style](https://img.shields.io/github/actions/workflow/status/rdcstarr/laravel-settings/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/rdcstarr/laravel-settings/actions)
+[![Downloads](https://img.shields.io/packagist/dt/rdcstarr/laravel-settings.svg?style=flat-square)](https://packagist.org/packages/rdcstarr/laravel-settings)
 
-A simple and elegant Laravel package for managing application settings with groups, caching, and multiple access methods.
+> Elegant package for managing **application settings** in Laravel — with groups, caching, and multiple access methods.
 
-## Features
+---
 
-- 🔧 **Group-based organization** - Organize settings into logical groups
-- ⚡ **Automatic caching** - Built-in cache management for optimal performance
-- 🎯 **Multiple access methods** - Use helper function, facade, or dependency injection
-- 📦 **Batch operations** - Set multiple settings efficiently
-- 🔄 **Method chaining** - Fluent interface for better developer experience
+## ✨ Features
 
-## Installation
+- 🔧 **Groups** – organize settings logically
+- ⚡ **Cache** – built-in cache layer for speed
+- 🎯 **Access** – helper, facade, or DI
+- 📦 **Batch ops** – set multiple values at once
+- 🔄 **Fluent API** – method chaining for clean code
 
-You can install the package via composer:
+---
+
+## 📦 Installation
 
 ```bash
 composer require rdcstarr/laravel-settings
 ```
 
-You can publish and run the migrations with:
+Publish & migrate:
 
 ```bash
 php artisan vendor:publish --tag="settings-migrations"
 php artisan migrate
 ```
 
-## Usage
-
-### Quick Start
+## 🚀 Quick Start
 
 ```php
-// Set a single setting
-settings(['app_name' => 'My Laravel App']);
-
-// Get a setting with default
+// Set & get values
+settings(['app_name' => 'My App']);
 $theme = settings('ui_theme', 'light');
 
 // Work with groups
@@ -46,31 +44,14 @@ settings()->group('mail')->set('driver', 'smtp');
 $mailDriver = settings()->group('mail')->get('driver');
 ```
 
-### 1. Setting Values
+## 🔑 Usage
 
-#### Single Values
+### Set Values
 ```php
-// Using helper function (recommended)
+// single
 settings(['language' => 'english']);
 
-// Using the class directly
-settings()->set('language', 'english');
-
-// In specific groups
-settings()->group('mail')->set('driver', 'smtp');
-settings()->group('app')->set('timezone', 'Europe/Bucharest');
-```
-
-#### Batch Operations
-```php
-// Multiple settings at once (recommended for performance)
-settings([
-    'app_name' => 'My Application',
-    'timezone' => 'Europe/Bucharest',
-    'debug_mode' => false,
-]);
-
-// Group-specific batch operations
+// batch in group
 settings()->group('mail')->set([
     'driver' => 'smtp',
     'host' => 'smtp.example.com',
@@ -79,172 +60,68 @@ settings()->group('mail')->set([
 ]);
 ```
 
-### 2. Getting Values
-
-#### Basic Retrieval
+### Get Values
 ```php
-// Get with default value
-$language = settings('language', 'english');
-$theme = settings('ui_theme', 'light');
-
-// From specific groups
-$mailDriver = settings()->group('mail')->get('driver', 'mail');
-$cacheStore = settings()->group('cache')->get('default', 'file');
+$theme = settings('ui_theme', 'light');       // with default
+$mail  = settings()->group('mail')->all();    // group values
 ```
 
-#### Get All Settings
-```php
-// All settings from default group
-$allSettings = settings()->all();
-
-// All settings from specific group
-$mailSettings = settings()->group('mail')->all();
-$appSettings = settings()->group('app')->all();
-```
-
-### 3. Using Facade
-
+### Facade
 ```php
 use Rdcstarr\Settings\Facades\Settings;
 
-// All the same methods are available
 Settings::set('app_name', 'My App');
-Settings::get('app_name', 'Default App');
-
-// With groups
-Settings::group('mail')->set('driver', 'smtp');
-Settings::group('mail')->get('driver');
-
-// Batch operations
-Settings::set([
-    'key1' => 'value1',
-    'key2' => 'value2',
-]);
+$driver = Settings::group('mail')->get('driver', 'smtp');
 ```
 
-### 4. Advanced Operations
-
-#### Check if Setting Exists
+### Extra Operations
 ```php
-if (settings()->has('app_name')) {
-    // Setting exists
-}
+settings()->has('app_name');       // check existence
+settings()->forget('old_setting'); // delete
+settings()->flushCache();          // clear cache
+```
+---
+## 🎨 Blade Directives
+```php
+{{-- Simple --}}
+@setting('app_name', 'Default')
 
-if (settings()->group('mail')->has('driver')) {
-    // Mail driver setting exists
-}
+{{-- Grouped --}}
+@settingGroup('mail', 'driver', 'smtp')
+
+{{-- Conditional --}}
+@hassetting('maintenance_mode')
+    <div class="alert">Maintenance mode active</div>
+@endhassetting
 ```
 
-#### Remove Settings
+## 💡 Examples
 ```php
-// Remove from default group
-settings()->forget('old_setting');
-
-// Remove from specific group
-settings()->group('mail')->forget('old_host');
-```
-
-#### Cache Management
-```php
-// Manually flush cache (usually not needed)
-settings()->flushCache();
-```
-
-### 5. Practical Examples
-
-#### Application Configuration
-```php
-// Set initial app configuration
-settings([
-    'app_name' => 'My Laravel App',
-    'app_version' => '1.0.0',
-    'maintenance_mode' => false,
-]);
-
-// Use in views
-<h1>{{ settings('app_name') }}</h1>
-```
-
-#### User Preferences
-```php
-// Store user-specific settings
-$userId = auth()->id();
-settings()->group("user_{$userId}")->set([
+// User preferences
+settings()->group("user_".auth()->id())->set([
     'theme' => 'dark',
-    'language' => 'english',
-    'notifications' => true,
+    'language' => 'en',
 ]);
 
-// Get user preference
-$userTheme = settings()->group("user_{$userId}")->get('theme', 'light');
-```
-
-#### Feature Flags
-```php
-// Enable/disable features
-settings()->group('features')->set([
-    'new_dashboard' => true,
-    'beta_features' => false,
-    'api_v2' => true,
-]);
-
-// Check in code
-if (settings()->group('features')->get('new_dashboard', false)) {
-    // Show new dashboard
+// Feature flags
+if (settings()->group('features')->get('new_dashboard', false))
+{
+    // Enable feature
 }
 ```
 
-#### System Configuration
-```php
-// Mail configuration
-settings()->group('mail')->set([
-    'driver' => 'smtp',
-    'host' => 'smtp.mailtrap.io',
-    'port' => 2525,
-]);
-
-// Cache configuration
-settings()->group('cache')->set([
-    'default' => 'redis',
-    'ttl' => 3600,
-]);
-```
-
-### 6. Method Chaining
-
-The package supports fluent method chaining for better readability:
-
-```php
-$mailSettings = settings()
-    ->group('mail')
-    ->set('driver', 'smtp')
-    ->flushCache()
-    ->all();
-```
-
-## Testing
-
+## 🧪 Testing
 ```bash
 composer test
 ```
 
-## Changelog
+## 📖 Resources
+ - [Changelog](CHANGELOG.md) for more information on what has changed recently.
+ - [Contributing](CONTRIBUTING.md) for details.
+ - [Security Vulnerabilities](../../security/policy) on how to report security vulnerabilities.
 
-Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
+## 👥 Credits
+ - [Rdcstarr](https://github.com/rdcstarr)
 
-## Contributing
-
-Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
-
-## Security Vulnerabilities
-
-Please review [our security policy](../../security/policy) on how to report security vulnerabilities.
-
-## Credits
-
-- [Rdcstarr](https://github.com/rdcstarr)
-- [All Contributors](../../contributors)
-
-## License
-
-The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+## 📜 License
+ - [License](LICENSE.md) for more information.

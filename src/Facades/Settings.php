@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\Facade;
  */
 class Settings extends Facade
 {
-    protected static function getFacadeAccessor(): string
-    {
-        return \Rdcstarr\Settings\Settings::class;
-    }
+	protected static function getFacadeAccessor(): string
+	{
+		return \Rdcstarr\Settings\Settings::class;
+	}
 }

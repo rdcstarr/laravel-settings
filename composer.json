@@ -1,5 +1,6 @@
 {
 	"name": "rdcstarr/laravel-settings",
+	"version": "1.0.0",
 	"description": "A simple settings package for Laravel.",
 	"type": "library",
 	"keywords": [

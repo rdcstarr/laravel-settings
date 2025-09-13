@@ -22,17 +22,17 @@ class Settings
 	 */
 	public function all(): Collection
 	{
-		return $this->cache ??= Cache::forever($this->settingsCacheKey, fn() => Setting::all()->pluck('value', 'key'));
+		return $this->cache ??= Cache::rememberForever($this->settingsCacheKey, fn() => Setting::all()->pluck('value', 'key'));
 	}
 
 	/**
 	 * Gets the value of a specific setting key.
 	 *
 	 * @param string $key The setting key to retrieve.
-	 * @param mixed $default The default value to return if the key does not exist.
+	 * @param ?string $default The default value to return if the key does not exist.
 	 * @return mixed The value of the setting or the default value.
 	 */
-	public function get(string $key, mixed $default = null): mixed
+	public function get(string $key, ?string $default = null): mixed
 	{
 		return $this->all()->get($key, $default);
 	}

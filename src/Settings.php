@@ -13,7 +13,7 @@ class Settings
 	 * Cache for the current request (RAM)
 	 */
 	protected ?Collection $cache = null;
-	protected string $settingsCacheKey = 'app_settings:';
+	protected string $settingsCacheKey = 'app_settings';
 
 	/**
 	 * Retrieves all settings from cache or database.

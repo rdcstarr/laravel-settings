@@ -9,12 +9,6 @@ use Rdcstarr\Settings\Models\Setting;
 
 class Settings
 {
-	/**
-	 * Cache for the current request (RAM)
-	 *
-	 * @var ?Collection The cached settings for the current request.
-	 */
-	protected ?Collection $cache = null;
 
 	/**
 	 * Cache key for the settings.
@@ -22,6 +16,13 @@ class Settings
 	 * @var string
 	 */
 	protected string $cacheKey = 'app_settings';
+
+	/**
+	 * Cache for the current request (RAM)
+	 *
+	 * @var ?Collection The cached settings for the current request.
+	 */
+	protected ?Collection $cache = null;
 
 	/**
 	 * Retrieves all settings from cache or database.

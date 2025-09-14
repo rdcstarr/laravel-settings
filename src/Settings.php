@@ -11,9 +11,17 @@ class Settings
 {
 	/**
 	 * Cache for the current request (RAM)
+	 *
+	 * @var ?Collection The cached settings for the current request.
 	 */
 	protected ?Collection $cache = null;
-	protected string $settingsCacheKey = 'app_settings';
+
+	/**
+	 * Cache key for the settings.
+	 *
+	 * @var string
+	 */
+	protected string $cacheKey = 'app_settings';
 
 	/**
 	 * Retrieves all settings from cache or database.
@@ -22,7 +30,7 @@ class Settings
 	 */
 	public function all(): Collection
 	{
-		return $this->cache ??= Cache::rememberForever($this->settingsCacheKey, fn() => Setting::all()->pluck('value', 'key'));
+		return $this->cache ??= Cache::rememberForever($this->cacheKey, fn() => Setting::all()->pluck('value', 'key'));
 	}
 
 	/**
@@ -95,7 +103,7 @@ class Settings
 	 */
 	public function flushCache(): bool
 	{
-		$cache = Cache::forget($this->settingsCacheKey);
+		$cache = Cache::forget($this->cacheKey);
 		$cache && $this->cache = null;
 
 		return (bool) $cache;
@@ -132,7 +140,7 @@ class Settings
 	 */
 	protected function updateCacheDirectly(array $keysToAdd = [], array $keysToRemove = []): void
 	{
-		$cached = Cache::get($this->settingsCacheKey);
+		$cached = Cache::get($this->cacheKey);
 
 		if (!$cached instanceof Collection)
 		{
@@ -144,7 +152,7 @@ class Settings
 			->when(!empty($keysToRemove), fn($c) => $c->except($keysToRemove))
 			->when(!empty($keysToAdd), fn($c) => $c->merge($keysToAdd));
 
-		Cache::forever($this->settingsCacheKey, $updater($cached));
+		Cache::forever($this->cacheKey, $updater($cached));
 
 		// Update RAM cache if it exists
 		if (isset($this->cache))

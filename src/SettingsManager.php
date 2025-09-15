@@ -2,14 +2,12 @@
 
 namespace Rdcstarr\Settings;
 
-use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
-use InvalidArgumentException;
 use Rdcstarr\Settings\Models\Setting;
 use Throwable;
 
-class Settings
+class SettingsManager
 {
 	/**
 	 * The cache key used for storing settings.
@@ -149,6 +147,16 @@ class Settings
 	public function has(string $key): bool
 	{
 		return $this->all()->has($key);
+	}
+
+	/**
+	 * Get all distinct groups from the settings table.
+	 *
+	 * @return Collection A collection of all group names.
+	 */
+	public function getAllGroups(): Collection
+	{
+		return Setting::distinct('group')->pluck('group');
 	}
 
 	/**

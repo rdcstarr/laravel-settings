@@ -15,6 +15,7 @@
 - 🎯 **Access** – helper, facade, or DI
 - 📦 **Batch ops** – set multiple values at once
 - 🔄 **Fluent API** – method chaining for clean code
+- 🗂️ **Groups** – organize settings by logical groups (e.g., `admin`, `user`, `tenant`) for scoped configuration
 
 ---
 

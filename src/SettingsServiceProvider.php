@@ -4,7 +4,12 @@ namespace Rdcstarr\Settings;
 
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use Rdcstarr\Settings\Commands\SettingsCommand;
+use Rdcstarr\Settings\Commands\SettingsListCommand;
+use Rdcstarr\Settings\Commands\SettingsSetCommand;
+use Rdcstarr\Settings\Commands\SettingsGetCommand;
+use Rdcstarr\Settings\Commands\SettingsDeleteCommand;
+use Rdcstarr\Settings\Commands\SettingsClearCacheCommand;
+use Rdcstarr\Settings\Commands\SettingsGroupsCommand;
 use Illuminate\Support\Facades\Blade;
 
 class SettingsServiceProvider extends PackageServiceProvider
@@ -13,7 +18,7 @@ class SettingsServiceProvider extends PackageServiceProvider
 	{
 		parent::register();
 
-		$this->app->singleton('settings', Settings::class);
+		$this->app->singleton('settings', SettingsManager::class);
 	}
 
 	public function boot(): void
@@ -50,6 +55,13 @@ class SettingsServiceProvider extends PackageServiceProvider
 		 */
 		$package->name('settings')
 			->hasMigration('create_settings_table')
-			->hasCommand(SettingsCommand::class);
+			->hasCommands([
+				SettingsListCommand::class,
+				SettingsSetCommand::class,
+				SettingsGetCommand::class,
+				SettingsDeleteCommand::class,
+				SettingsClearCacheCommand::class,
+				SettingsGroupsCommand::class,
+			]);
 	}
 }

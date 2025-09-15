@@ -45,12 +45,37 @@ settings()->set([
     'mail.port' => 587,
     'mail.encryption' => 'tls',
 ]);
+
+// or use setMany for cleaner syntax
+settings()->setMany([
+    'app.theme' => 'dark',
+    'app.language' => 'en',
+    'app.timezone' => 'UTC',
+]);
 ```
 
 ### Get Values
 ```php
-$theme = settings('app.theme', 'light');      // with default
-$all   = settings()->all();                   // all values
+$theme = settings('app.theme', 'light'); // with default
+$all   = settings()->all();              // all values
+
+// get multiple values at once
+$config = settings()->getMany(['app.theme', 'app.language', 'app.timezone']);
+// returns: ['app.theme' => 'dark', 'app.language' => 'en', 'app.timezone' => 'UTC']
+```
+
+### Working with Groups
+```php
+// set values in specific group
+settings()->group('admin')->set('site_name', 'My Admin Panel');
+settings()->group('user')->set('theme', 'dark');
+
+// get values from specific group
+$siteName = settings()->group('admin')->get('site_name', 'Default Site');
+$userTheme = settings()->group('user')->get('theme', 'light');
+
+// get all values from a group
+$adminSettings = settings()->group('admin')->all();
 ```
 
 ### Facade
@@ -59,6 +84,10 @@ use Rdcstarr\Settings\Facades\Settings;
 
 Settings::set('app.name', 'My App');
 $driver = Settings::get('mail.driver', 'smtp');
+
+// working with groups via facade
+Settings::group('admin')->set('dashboard_style', 'modern');
+$style = Settings::group('admin')->get('dashboard_style', 'classic');
 ```
 
 ### Extra Operations
@@ -66,32 +95,65 @@ $driver = Settings::get('mail.driver', 'smtp');
 settings()->has('app.name');       // check existence
 settings()->forget('old.setting'); // delete
 settings()->flushCache();          // clear cache
+
+// group-specific operations
+settings()->group('admin')->has('site_name');     // check in specific group
+settings()->group('admin')->forget('old_config'); // delete from specific group
+settings()->flushAllCache();                      // clear all groups cache
 ```
 ---
 ## 🎨 Blade Directives
 ```php
-{{-- Simple --}}
+{{-- Simple settings --}}
 @settings('app_name', 'Default')
 
-{{-- Conditional --}}
+{{-- Settings from specific group --}}
+@settingsForGroup('admin', 'site_name', 'My Site')
+@settingsForGroup('user', 'theme', 'light')
+
+{{-- Conditional checks --}}
 @hasSettings('maintenance_mode')
     <div class="alert">Maintenance mode active</div>
 @endhasSettings
+
+{{-- Conditional checks for specific group --}}
+@hasSettingsForGroup('admin', 'debug_mode')
+    <div class="debug-info">Debug mode enabled</div>
+@endhasSettingsForGroup
+
+{{-- More examples --}}
+@settingsForGroup('mail', 'from_name', 'Laravel App')
+@settingsForGroup('social', 'twitter_handle')
 ```
 
 ## 💡 Examples
 ```php
-// User preferences
-settings([
-    'user_' . auth()->id() . '_theme' => 'dark',
-    'user_' . auth()->id() . '_language' => 'en',
+// User preferences with groups
+settings()->group('user_' . auth()->id())->setMany([
+    'theme' => 'dark',
+    'language' => 'en',
+    'timezone' => 'Europe/London',
+]);
+
+// Admin configuration
+settings()->group('admin')->setMany([
+    'site_name' => 'My Application',
+    'maintenance_mode' => false,
+    'debug_enabled' => true,
 ]);
 
 // Feature flags
-if (settings('features_new_dashboard', false))
-{
-    // Enable feature
+if (settings()->group('features')->get('new_dashboard', false)) {
+    // Enable new dashboard feature
 }
+
+// Multi-tenant settings
+$tenantId = tenant()->id;
+settings()->group("tenant_{$tenantId}")->set('branding_color', '#ff6b6b');
+
+// Get user preferences in one call
+$userPrefs = settings()->group('user_' . auth()->id())
+    ->getMany(['theme', 'language', 'timezone']);
 ```
 
 ## 🧪 Testing

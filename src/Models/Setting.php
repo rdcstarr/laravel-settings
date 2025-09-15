@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 class Setting extends Model
 {
 	protected $fillable = [
+		'group',
 		'key',
 		'value',
 	];

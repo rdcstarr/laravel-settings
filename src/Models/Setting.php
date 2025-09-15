@@ -19,7 +19,7 @@ class Setting extends Model
 		'updated_at' => 'datetime',
 	];
 
-	protected $primaryKey = 'key';
+	// protected $primaryKey = 'key';
 
 	/**
 	 * Cast value to appropriate type when retrieving.

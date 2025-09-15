@@ -5,7 +5,9 @@ namespace Rdcstarr\Settings;
 use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use InvalidArgumentException;
 use Rdcstarr\Settings\Models\Setting;
+use Throwable;
 
 class Settings
 {
@@ -18,30 +20,23 @@ class Settings
 	protected string $cacheKey = 'app_settings';
 
 	/**
-	 * Cache for the current request (RAM)
-	 *
-	 * @var ?Collection The cached settings for the current request.
-	 */
-	protected ?Collection $cache = null;
-
-	/**
 	 * Retrieves all settings from cache or database.
 	 *
 	 * @return Collection The collection of settings as key-value pairs.
 	 */
 	public function all(): Collection
 	{
-		return $this->cache ??= Cache::rememberForever($this->cacheKey, fn() => Setting::all()->pluck('value', 'key'));
+		return Cache::rememberForever($this->cacheKey, fn() => $this->getDataFromModel());
 	}
 
 	/**
 	 * Gets the value of a specific setting key.
 	 *
 	 * @param string $key The setting key to retrieve.
-	 * @param ?string $default The default value to return if the key does not exist.
+	 * @param mixed $default The default value to return if the key does not exist.
 	 * @return mixed The value of the setting or the default value.
 	 */
-	public function get(string $key, ?string $default = null): mixed
+	public function get(string $key, mixed $default = null): mixed
 	{
 		return $this->all()->get($key, $default);
 	}
@@ -50,25 +45,32 @@ class Settings
 	 * Sets the value for a specific setting key or multiple keys.
 	 *
 	 * @param string|array $key The setting key or an array of key-value pairs.
-	 * @param mixed $val The value to set for the key (ignored if $key is array).
+	 * @param mixed $value The value to set for the key (ignored if $key is array).
 	 * @return bool True on success, false on failure.
-	 * @throws Exception If database operation fails.
 	 */
-	public function set(string|array $key, mixed $val = null): bool
+	public function set(string|array $key, mixed $value = null): bool
 	{
 		if (is_array($key))
 		{
 			return $this->setBatch($key);
 		}
 
-		$setting = Setting::updateOrCreate(
-			['key' => $key],
-			['value' => $val]
-		);
+		try
+		{
+			Setting::updateOrCreate(
+				['key' => $key],
+				['value' => $value]
+			);
 
-		$setting && $this->updateCacheDirectly(keysToAdd: [$key => $val]);
+			$this->handleCache("add", [$key => $value]);
 
-		return (bool) $setting;
+			return true;
+		}
+		catch (Throwable $e)
+		{
+			$this->flushCache();
+			return false;
+		}
 	}
 
 	/**
@@ -91,10 +93,22 @@ class Settings
 	 */
 	public function forget(string $key): bool
 	{
-		$deleted = Setting::whereKey($key)->delete();
-		$deleted && $this->updateCacheDirectly(keysToRemove: [$key]);
+		try
+		{
+			$deleted = Setting::where('key', $key)->delete();
 
-		return (bool) $deleted;
+			if ($deleted > 0)
+			{
+				$this->handleCache("remove", $key);
+			}
+
+			return $deleted > 0;
+		}
+		catch (Throwable $e)
+		{
+			$this->flushCache();
+			return false;
+		}
 	}
 
 	/**
@@ -104,10 +118,15 @@ class Settings
 	 */
 	public function flushCache(): bool
 	{
-		$cache = Cache::forget($this->cacheKey);
-		$cache && $this->cache = null;
-
-		return (bool) $cache;
+		try
+		{
+			Cache::forget($this->cacheKey);
+			return true;
+		}
+		catch (Throwable $e)
+		{
+			return false;
+		}
 	}
 
 	/**
@@ -119,46 +138,71 @@ class Settings
 	 */
 	protected function setBatch(array $settings): bool
 	{
-		$data = collect($settings)->map(fn($value, $key) => [
-			'key'        => $key,
-			'value'      => $value,
-			'created_at' => now(),
-			'updated_at' => now(),
-		])->values()->toArray();
+		try
+		{
+			$data = collect($settings)->map(fn($value, $key) => [
+				'key'        => $key,
+				'value'      => $value,
+				'created_at' => now(),
+				'updated_at' => now(),
+			])->values()->toArray();
 
-		$setting = Setting::upsert($data, ['key'], ['value', 'updated_at']);
-		$setting && $this->updateCacheDirectly(keysToAdd: $settings);
+			Setting::upsert($data, ['key'], ['value', 'updated_at']);
+			$this->handleCache("add", $settings);
 
-		return (bool) $setting;
-	}
-
-	/**
-	 * Updates the cache by adding or removing specific keys without flushing the entire cache.
-	 *
-	 * @param array $keysToAdd Associative array of keys to add/update
-	 * @param array $keysToRemove Array of keys to remove
-	 * @return void
-	 */
-	protected function updateCacheDirectly(array $keysToAdd = [], array $keysToRemove = []): void
-	{
-		$cached = Cache::get($this->cacheKey);
-
-		if (!$cached instanceof Collection)
+			return true;
+		}
+		catch (Throwable $e)
 		{
 			$this->flushCache();
-			return;
+			return false;
 		}
+	}
 
-		$updater = fn(Collection $cache) => $cache
-			->when(!empty($keysToRemove), fn($c) => $c->except($keysToRemove))
-			->when(!empty($keysToAdd), fn($c) => $c->merge($keysToAdd));
+	protected function handleCache(string $action, array|string|null $data = null)
+	{
+		$cache = Cache::get($this->cacheKey);
 
-		Cache::forever($this->cacheKey, $updater($cached));
-
-		// Update RAM cache if it exists
-		if (isset($this->cache))
+		if (!$cache instanceof Collection)
 		{
-			$this->cache = $updater($this->cache);
+			$cache = $this->getDataFromModel();
 		}
+
+		match ($action)
+		{
+			'add' => $this->addToCache($cache, $data),
+			'remove' => $this->removeFromCache($cache, $data),
+			default => throw new InvalidArgumentException("Unknown action: {$action}")
+		};
+
+		Cache::forever($this->cacheKey, $cache);
+	}
+
+	private function addToCache(Collection $cache, mixed $data): void
+	{
+		if (!is_array($data))
+		{
+			throw new InvalidArgumentException('Data must be an array when action is add.');
+		}
+
+		foreach ($data as $key => $value)
+		{
+			$cache->put($key, $value);
+		}
+	}
+
+	private function removeFromCache(Collection $cache, mixed $data): void
+	{
+		if (!is_string($data))
+		{
+			throw new InvalidArgumentException('Data must be a string when action is remove.');
+		}
+
+		$cache->forget($data);
+	}
+
+	private function getDataFromModel(): Collection
+	{
+		return Setting::all()->pluck('value', 'key');
 	}
 }

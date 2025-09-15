@@ -16,9 +16,9 @@ class SettingsCommand extends Command
 
 	public function handle(): int
 	{
-		$action  = $this->argument('action');
-		$key     = $this->option('key');
-		$value   = $this->option('value');
+		$action = $this->argument('action');
+		$key    = $this->option('key');
+		$value  = $this->option('value');
 
 		return match ($action)
 		{
@@ -126,7 +126,7 @@ class SettingsCommand extends Command
 			return self::SUCCESS;
 		}
 
-		if ($this->confirm("Are you sure you want to delete setting '{$key}'?", false))
+		if ($this->confirm("Are you sure you want to delete setting '{$key}'?", true))
 		{
 			if (settings()->forget($key))
 			{
@@ -144,7 +144,7 @@ class SettingsCommand extends Command
 
 	protected function clearCache(): int
 	{
-		if ($this->confirm('Are you sure you want to clear the settings cache?', false))
+		if ($this->confirm('Are you sure you want to clear the settings cache?', true))
 		{
 			if (settings()->flushCache())
 			{

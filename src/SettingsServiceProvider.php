@@ -13,7 +13,7 @@ class SettingsServiceProvider extends PackageServiceProvider
 	{
 		parent::register();
 
-		$this->app->singleton('settings', fn($app) => new Settings());
+		$this->app->singleton('settings', Settings::class);
 	}
 
 	public function boot(): void

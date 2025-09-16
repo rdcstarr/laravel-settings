@@ -28,6 +28,11 @@ class SettingsServiceProvider extends PackageServiceProvider
 		// Load migrations
 		$this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
 
+		// Publish migrations
+		$this->publishes([
+			__DIR__ . '/../database/migrations' => database_path('migrations'),
+		], 'migrations');
+
 		// @settings('key', 'default')
 		Blade::directive('settings', fn($expression) => "<?php echo e(settings()->get($expression)); ?>");
 
@@ -57,7 +62,6 @@ class SettingsServiceProvider extends PackageServiceProvider
 		 * More info: https://github.com/spatie/laravel-package-tools
 		 */
 		$package->name('settings')
-			->hasMigration('create_settings_table')
 			->hasCommands([
 				SettingsListCommand::class,
 				SettingsSetCommand::class,

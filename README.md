@@ -127,6 +127,75 @@ settings()->flushAllCache();                      // clear all groups cache
 @settingsForGroup('social', 'twitter_handle')
 ```
 
+## 🎯 Artisan Commands
+
+The package provides dedicated Artisan commands for managing settings directly from the command line:
+
+### List Settings
+```bash
+# List all settings from default group
+php artisan settings:list
+
+# List settings from a specific group
+php artisan settings:list --group=admin
+```
+
+### Set Settings
+```bash
+# Interactive mode (prompts for input)
+php artisan settings:set
+
+# Set with arguments
+php artisan settings:set app.name "My Application"
+
+# Set with specific group
+php artisan settings:set site_name "Admin Panel" --group=admin
+```
+
+### Get Settings
+```bash
+# Interactive mode
+php artisan settings:get
+
+# Get specific setting
+php artisan settings:get app.name
+
+# Get from specific group
+php artisan settings:get site_name --group=admin
+```
+
+### Delete Settings
+```bash
+# Interactive mode
+php artisan settings:delete
+
+# Delete specific setting
+php artisan settings:delete old.setting
+
+# Delete from group with force (skip confirmation)
+php artisan settings:delete old_config --group=admin --force
+```
+
+### Clear Cache
+```bash
+# Clear all cache (with confirmation)
+php artisan settings:clear-cache
+
+# Clear specific group cache
+php artisan settings:clear-cache --group=admin
+
+# Skip confirmation
+php artisan settings:clear-cache --force
+```
+
+### List Groups
+```bash
+# List all available groups
+php artisan settings:groups
+```
+
+All commands feature interactive prompts using Laravel Prompts for a beautiful CLI experience with validation, confirmations, and colorful output.
+
 ## 💡 Examples
 ```php
 // User preferences with groups

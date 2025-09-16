@@ -42,7 +42,8 @@ class SettingsManager
 	public function group(?string $group): self
 	{
 		$clone        = clone $this;
-		$clone->group = ($group && trim($group) !== '') ? trim($group) : 'default';
+		$clone->group = blank($group) ? 'default' : trim($group);
+
 		return $clone;
 	}
 

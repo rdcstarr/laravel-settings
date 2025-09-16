@@ -5,7 +5,9 @@
 	"keywords": [
 		"Rdcstarr",
 		"laravel",
-		"laravel-settings"
+		"laravel-settings",
+		"groups",
+		"settings"
 	],
 	"homepage": "https://github.com/rdcstarr/laravel-settings",
 	"license": "MIT",

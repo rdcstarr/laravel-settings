@@ -2,15 +2,15 @@
 
 namespace Rdcstarr\Settings;
 
-use Spatie\LaravelPackageTools\Package;
-use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Illuminate\Support\Facades\Blade;
+use Rdcstarr\Settings\Commands\SettingsClearCacheCommand;
+use Rdcstarr\Settings\Commands\SettingsDeleteCommand;
+use Rdcstarr\Settings\Commands\SettingsGetCommand;
+use Rdcstarr\Settings\Commands\SettingsGroupsCommand;
 use Rdcstarr\Settings\Commands\SettingsListCommand;
 use Rdcstarr\Settings\Commands\SettingsSetCommand;
-use Rdcstarr\Settings\Commands\SettingsGetCommand;
-use Rdcstarr\Settings\Commands\SettingsDeleteCommand;
-use Rdcstarr\Settings\Commands\SettingsClearCacheCommand;
-use Rdcstarr\Settings\Commands\SettingsGroupsCommand;
-use Illuminate\Support\Facades\Blade;
+use Spatie\LaravelPackageTools\Package;
+use Spatie\LaravelPackageTools\PackageServiceProvider;
 
 class SettingsServiceProvider extends PackageServiceProvider
 {

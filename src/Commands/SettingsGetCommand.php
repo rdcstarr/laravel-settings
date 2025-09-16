@@ -3,6 +3,7 @@
 namespace Rdcstarr\Settings\Commands;
 
 use Illuminate\Console\Command;
+
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\text;
 
@@ -26,8 +27,6 @@ class SettingsGetCommand extends Command
 
 	/**
 	 * Execute the console command.
-	 *
-	 * @return int
 	 */
 	public function handle(): int
 	{
@@ -46,6 +45,7 @@ class SettingsGetCommand extends Command
 		if (!$key)
 		{
 			$this->error('Setting key is required.');
+
 			return self::FAILURE;
 		}
 
@@ -53,22 +53,15 @@ class SettingsGetCommand extends Command
 		{
 			$availableGroups = settings()->getAllGroups();
 
-			if ($availableGroups->isNotEmpty())
-			{
-				$group = select(
-					label: 'Select setting group',
-					options: $availableGroups->prepend('default')->unique()->toArray(),
-					default: 'default'
-				);
-			}
-			else
-			{
-				$group = text(
-					label: 'Enter setting group',
-					placeholder: 'Leave empty for default',
-					default: 'default'
-				);
-			}
+			$group = ($availableGroups->isNotEmpty()) ? select(
+				label: 'Select setting group',
+				options: $availableGroups->prepend('default')->unique()->toArray(),
+				default: 'default'
+			) : text(
+				label: 'Enter setting group',
+				placeholder: 'Leave empty for default',
+				default: 'default'
+			);
 		}
 
 		$settingsInstance = $group && $group !== 'default' ? settings()->group($group) : settings();
@@ -77,6 +70,7 @@ class SettingsGetCommand extends Command
 		{
 			$groupInfo = $group && $group !== 'default' ? " in group '{$group}'" : '';
 			$this->warn("Setting '{$key}' not found{$groupInfo}.");
+
 			return self::SUCCESS;
 		}
 

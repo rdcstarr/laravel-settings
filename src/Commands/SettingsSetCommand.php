@@ -3,6 +3,7 @@
 namespace Rdcstarr\Settings\Commands;
 
 use Illuminate\Console\Command;
+
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\text;
 
@@ -27,8 +28,6 @@ class SettingsSetCommand extends Command
 
 	/**
 	 * Execute the console command.
-	 *
-	 * @return int
 	 */
 	public function handle(): int
 	{
@@ -48,6 +47,7 @@ class SettingsSetCommand extends Command
 		if (!$key)
 		{
 			$this->error('Setting key is required.');
+
 			return self::FAILURE;
 		}
 
@@ -63,22 +63,15 @@ class SettingsSetCommand extends Command
 		{
 			$availableGroups = settings()->getAllGroups();
 
-			if ($availableGroups->isNotEmpty())
-			{
-				$group = select(
-					label: 'Select setting group',
-					options: $availableGroups->prepend('default')->unique()->toArray(),
-					default: 'default'
-				);
-			}
-			else
-			{
-				$group = text(
-					label: 'Enter setting group',
-					placeholder: 'Leave empty for default',
-					default: 'default'
-				);
-			}
+			$group = ($availableGroups->isNotEmpty()) ? select(
+				label: 'Select setting group',
+				options: $availableGroups->prepend('default')->unique()->toArray(),
+				default: 'default'
+			) : text(
+				label: 'Enter setting group',
+				placeholder: 'Leave empty for default',
+				default: 'default'
+			);
 		}
 
 		$settingsInstance = $group && $group !== 'default' ? settings()->group($group) : settings();
@@ -87,10 +80,12 @@ class SettingsSetCommand extends Command
 		{
 			$groupInfo = $group && $group !== 'default' ? " in group '{$group}'" : '';
 			$this->info("Setting '{$key}' has been set{$groupInfo}.");
+
 			return self::SUCCESS;
 		}
 
 		$this->error('Failed to set setting.');
+
 		return self::FAILURE;
 	}
 }

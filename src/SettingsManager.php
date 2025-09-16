@@ -11,15 +11,11 @@ class SettingsManager
 {
 	/**
 	 * The cache key used for storing settings.
-	 *
-	 * @var string
 	 */
 	protected string $cacheKey = 'app_settings';
 
 	/**
 	 * Group name for settings (future use).
-	 *
-	 * @var string
 	 */
 	protected string $group = 'default';
 
@@ -36,7 +32,7 @@ class SettingsManager
 	/**
 	 * Set the group for settings (future use).
 	 *
-	 * @param string|null $group The group name to set.
+	 * @param  string|null  $group  The group name to set.
 	 * @return $this A new instance of Settings with the specified group.
 	 */
 	public function group(?string $group): self
@@ -50,8 +46,8 @@ class SettingsManager
 	/**
 	 * Get the value of a specific setting by its key.
 	 *
-	 * @param string $key The setting key to retrieve.
-	 * @param mixed $default The default value to return if the key doesn't exist.
+	 * @param  string  $key  The setting key to retrieve.
+	 * @param  mixed  $default  The default value to return if the key doesn't exist.
 	 * @return mixed The setting value or the default value if not found.
 	 */
 	public function get(string $key, mixed $default = null): mixed
@@ -62,7 +58,7 @@ class SettingsManager
 	/**
 	 * Get multiple setting values by their keys.
 	 *
-	 * @param array $keys An array of setting keys to retrieve.
+	 * @param  array  $keys  An array of setting keys to retrieve.
 	 * @return array An associative array containing the requested key-value pairs.
 	 */
 	public function getMany(array $keys): array
@@ -75,8 +71,8 @@ class SettingsManager
 	/**
 	 * Set a single setting value or multiple settings at once.
 	 *
-	 * @param string|array $key The setting key (string) or an array of key-value pairs.
-	 * @param mixed $value The value to set (ignored when $key is an array).
+	 * @param  string|array  $key  The setting key (string) or an array of key-value pairs.
+	 * @param  mixed  $value  The value to set (ignored when $key is an array).
 	 * @return bool True if the operation was successful, false otherwise.
 	 */
 	public function set(string|array $key, mixed $value = null): bool
@@ -100,6 +96,7 @@ class SettingsManager
 		catch (Throwable $e)
 		{
 			report($e);
+
 			return false;
 		}
 	}
@@ -107,7 +104,7 @@ class SettingsManager
 	/**
 	 * Set multiple settings in a single batch operation.
 	 *
-	 * @param array $settings An associative array of key-value pairs to store.
+	 * @param  array  $settings  An associative array of key-value pairs to store.
 	 * @return bool True if the operation was successful, false otherwise.
 	 */
 	public function setMany(array $settings): bool
@@ -135,6 +132,7 @@ class SettingsManager
 		catch (Throwable $e)
 		{
 			report($e);
+
 			return false;
 		}
 	}
@@ -142,7 +140,7 @@ class SettingsManager
 	/**
 	 * Check if a setting key exists in the storage.
 	 *
-	 * @param string $key The setting key to check for existence.
+	 * @param  string  $key  The setting key to check for existence.
 	 * @return bool True if the key exists, false otherwise.
 	 */
 	public function has(string $key): bool
@@ -163,7 +161,7 @@ class SettingsManager
 	/**
 	 * Remove a setting by its key from the storage.
 	 *
-	 * @param string $key The setting key to remove.
+	 * @param  string  $key  The setting key to remove.
 	 * @return bool True if the key was successfully deleted, false if not found or on error.
 	 */
 	public function forget(string $key): bool
@@ -178,6 +176,7 @@ class SettingsManager
 			if ($deleted > 0)
 			{
 				$this->flushCache();
+
 				return true;
 			}
 
@@ -186,6 +185,7 @@ class SettingsManager
 		catch (Throwable $e)
 		{
 			report($e);
+
 			return false;
 		}
 	}
@@ -222,6 +222,7 @@ class SettingsManager
 		try
 		{
 			Cache::forget($this->cacheKey());
+
 			return true;
 		}
 		catch (Throwable $e)

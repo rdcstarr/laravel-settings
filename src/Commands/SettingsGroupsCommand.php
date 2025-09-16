@@ -3,6 +3,7 @@
 namespace Rdcstarr\Settings\Commands;
 
 use Illuminate\Console\Command;
+
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\select;
 
@@ -24,8 +25,6 @@ class SettingsGroupsCommand extends Command
 
 	/**
 	 * Execute the console command.
-	 *
-	 * @return int
 	 */
 	public function handle(): int
 	{
@@ -34,6 +33,7 @@ class SettingsGroupsCommand extends Command
 		if ($groups->isEmpty())
 		{
 			$this->info('No groups found.');
+
 			return self::SUCCESS;
 		}
 
@@ -62,6 +62,7 @@ class SettingsGroupsCommand extends Command
 			{
 				$groupInfo = $groupOption ? " in group '{$groupOption}'" : '';
 				$this->info("No settings found{$groupInfo}.");
+
 				return self::SUCCESS;
 			}
 

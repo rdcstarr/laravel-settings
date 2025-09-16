@@ -2,8 +2,8 @@
 
 namespace Rdcstarr\Settings\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
@@ -36,7 +36,7 @@ class Setting extends Model
 	/**
 	 * Auto-cast string value to appropriate type.
 	 *
-	 * @param string|null $value
+	 * @param  string|null  $value
 	 * @return mixed
 	 */
 	protected function castValue($value)
@@ -94,8 +94,7 @@ class Setting extends Model
 	/**
 	 * Encode value for storage.
 	 *
-	 * @param mixed $value
-	 * @return string
+	 * @param  mixed  $value
 	 */
 	protected function encodeValue($value): string
 	{

@@ -5,8 +5,8 @@ if (!function_exists('settings'))
 	/**
 	 * Get or set app settings stored in db.
 	 *
-	 * @param mixed $key
-	 * @param mixed $default
+	 * @param  mixed  $key
+	 * @param  mixed  $default
 	 * @return mixed
 	 */
 	function settings($key = null, $default = null)

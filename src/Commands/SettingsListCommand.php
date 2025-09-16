@@ -22,8 +22,6 @@ class SettingsListCommand extends Command
 
 	/**
 	 * Execute the console command.
-	 *
-	 * @return int
 	 */
 	public function handle(): int
 	{
@@ -35,6 +33,7 @@ class SettingsListCommand extends Command
 		{
 			$groupInfo = $group ? " in group '{$group}'" : '';
 			$this->info("No settings found{$groupInfo}.");
+
 			return self::SUCCESS;
 		}
 

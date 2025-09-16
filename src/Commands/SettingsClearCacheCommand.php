@@ -3,6 +3,7 @@
 namespace Rdcstarr\Settings\Commands;
 
 use Illuminate\Console\Command;
+
 use function Laravel\Prompts\confirm;
 
 class SettingsClearCacheCommand extends Command
@@ -25,8 +26,6 @@ class SettingsClearCacheCommand extends Command
 
 	/**
 	 * Execute the console command.
-	 *
-	 * @return int
 	 */
 	public function handle(): int
 	{
@@ -38,6 +37,7 @@ class SettingsClearCacheCommand extends Command
 		if (!$force && !confirm("Are you sure you want to {$message}?", false))
 		{
 			$this->info('Operation cancelled.');
+
 			return self::SUCCESS;
 		}
 
@@ -47,6 +47,7 @@ class SettingsClearCacheCommand extends Command
 			if ($settingsInstance->flushCache())
 			{
 				$this->info("Settings cache for group '{$group}' has been cleared.");
+
 				return self::SUCCESS;
 			}
 		}
@@ -55,11 +56,13 @@ class SettingsClearCacheCommand extends Command
 			if (settings()->flushAllCache())
 			{
 				$this->info('All settings cache has been cleared.');
+
 				return self::SUCCESS;
 			}
 		}
 
 		$this->error('Failed to clear settings cache.');
+
 		return self::FAILURE;
 	}
 }

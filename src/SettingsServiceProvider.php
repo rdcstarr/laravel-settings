@@ -25,6 +25,9 @@ class SettingsServiceProvider extends PackageServiceProvider
 	{
 		parent::boot();
 
+		// Load migrations
+		$this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+
 		// @settings('key', 'default')
 		Blade::directive('settings', fn($expression) => "<?php echo e(settings()->get($expression)); ?>");
 

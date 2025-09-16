@@ -28,7 +28,7 @@ composer require rdcstarr/laravel-settings
 Publish & migrate:
 
 ```bash
-php artisan vendor:publish --tag="settings-migrations"
+php artisan vendor:publish --tag="settings-migrations" // optional
 php artisan migrate
 ```
 

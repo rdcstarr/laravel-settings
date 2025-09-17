@@ -233,8 +233,6 @@ composer test
 
 ## 📖 Resources
  - [Changelog](CHANGELOG.md) for more information on what has changed recently.
- - [Contributing](CONTRIBUTING.md) for details.
- - [Security Vulnerabilities](../../security/policy) on how to report security vulnerabilities.
 
 ## 👥 Credits
  - [Rdcstarr](https://github.com/rdcstarr)

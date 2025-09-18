@@ -25,7 +25,7 @@ composer require rdcstarr/laravel-settings
 
 1. **Publish migrations files** (optional):
    ```bash
-   php artisan vendor:publish --provider="Rdcstarr\Settings\SettingsServiceProvider" --tag="migrations"
+   php artisan vendor:publish --provider="Rdcstarr\Settings\SettingsServiceProvider"
    ```
 
 2. **Migrate** (required):

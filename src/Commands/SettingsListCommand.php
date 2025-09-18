@@ -3,6 +3,8 @@
 namespace Rdcstarr\Settings\Commands;
 
 use Illuminate\Console\Command;
+use function Laravel\Prompts\select;
+use function Laravel\Prompts\text;
 
 class SettingsListCommand extends Command
 {
@@ -23,22 +25,24 @@ class SettingsListCommand extends Command
 	/**
 	 * Execute the console command.
 	 */
-	public function handle(): int
+	public function handle()
 	{
-		$group            = $this->option('group');
-		$settingsInstance = $group ? settings()->group($group) : settings();
-		$settings         = $settingsInstance->all();
+		$availableGroups = settings()->getAllGroups();
+		$group           = $this->option('group') ?: (
+			$availableGroups->isNotEmpty()
+			? select('Select the setting group', $availableGroups->prepend('default')->unique()->toArray(), 'default')
+			: text('Enter the setting group', "Leave empty to use 'default'", default: 'default')
+		);
+
+		$settings = settings()->group($group)->all();
 
 		if ($settings->isEmpty())
 		{
-			$groupInfo = $group ? " in group '{$group}'" : '';
-			$this->info("No settings found{$groupInfo}.");
-
-			return self::SUCCESS;
+			$this->components->warn("No settings were found in the group '{$group}'.");
+			return;
 		}
 
-		$groupInfo = $group ? " (Group: {$group})" : ' (Group: default)';
-		$this->info("Settings{$groupInfo}:");
+		$this->components->info("List all settings in group '{$group}':");
 		$this->table(
 			['Key', 'Value', 'Type'],
 			$settings->map(fn($value, $key) => [
@@ -47,7 +51,5 @@ class SettingsListCommand extends Command
 				'Type'  => gettype($value),
 			])->values()->toArray()
 		);
-
-		return self::SUCCESS;
 	}
 }

@@ -3,7 +3,7 @@
 namespace Rdcstarr\Settings\Commands;
 
 use Illuminate\Console\Command;
-
+use InvalidArgumentException;
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\text;
 
@@ -29,63 +29,31 @@ class SettingsSetCommand extends Command
 	/**
 	 * Execute the console command.
 	 */
-	public function handle(): int
+	public function handle(): void
 	{
-		$key   = $this->argument('key');
-		$value = $this->argument('value');
-		$group = $this->option('group');
+		$key = $this->argument('key')
+			?: text('Enter the setting key', 'e.g., app.name', required: true)
+			?: throw new InvalidArgumentException('Setting key is required.');
 
-		if (!$key)
+		$value = $this->argument('value')
+			?: text('Enter the setting value', 'e.g., My App', required: true)
+			?: throw new InvalidArgumentException('Setting value is required.');
+
+		$availableGroups = settings()->getAllGroups();
+		$group           = $this->option('group') ?: (
+			$availableGroups->isNotEmpty()
+			? select('Select the setting group', $availableGroups->prepend('default')->unique()->toArray(), 'default')
+			: text('Enter the setting group', "Leave empty to use 'default'", default: 'default')
+		);
+
+		$instance = settings()->group($group);
+
+		if ($instance->set($key, $value))
 		{
-			$key = text(
-				label: 'Enter setting key',
-				placeholder: 'e.g., app.name',
-				required: true
-			);
+			$this->components->success("Setting '{$key}' from '{$group}' group has been set.");
+			return;
 		}
 
-		if (!$key)
-		{
-			$this->error('Setting key is required.');
-
-			return self::FAILURE;
-		}
-
-		if ($value === null)
-		{
-			$value = text(
-				label: 'Enter setting value',
-				placeholder: 'Enter the value for this setting'
-			);
-		}
-
-		if (!$group)
-		{
-			$availableGroups = settings()->getAllGroups();
-
-			$group = ($availableGroups->isNotEmpty()) ? select(
-				label: 'Select setting group',
-				options: $availableGroups->prepend('default')->unique()->toArray(),
-				default: 'default'
-			) : text(
-				label: 'Enter setting group',
-				placeholder: 'Leave empty for default',
-				default: 'default'
-			);
-		}
-
-		$settingsInstance = $group && $group !== 'default' ? settings()->group($group) : settings();
-
-		if ($settingsInstance->set($key, $value))
-		{
-			$groupInfo = $group && $group !== 'default' ? " in group '{$group}'" : '';
-			$this->info("Setting '{$key}' has been set{$groupInfo}.");
-
-			return self::SUCCESS;
-		}
-
-		$this->error('Failed to set setting.');
-
-		return self::FAILURE;
+		$this->components->error('Failed to set setting.');
 	}
 }

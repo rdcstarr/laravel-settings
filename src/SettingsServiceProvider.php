@@ -14,6 +14,24 @@ use Spatie\LaravelPackageTools\PackageServiceProvider;
 
 class SettingsServiceProvider extends PackageServiceProvider
 {
+	public function configurePackage(Package $package): void
+	{
+		/*
+		 * This class is a Package Service Provider
+		 *
+		 * More info: https://github.com/spatie/laravel-package-tools
+		 */
+		$package->name('settings')
+			->hasCommands([
+				SettingsListCommand::class,
+				SettingsSetCommand::class,
+				SettingsGetCommand::class,
+				SettingsDeleteCommand::class,
+				SettingsClearCacheCommand::class,
+				SettingsGroupsCommand::class,
+			]);
+	}
+
 	public function register(): void
 	{
 		parent::register();
@@ -26,12 +44,15 @@ class SettingsServiceProvider extends PackageServiceProvider
 		parent::boot();
 
 		// Load migrations
-		$this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+		if (app()->runningInConsole())
+		{
+			$this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
 
-		// Publish migrations
-		$this->publishes([
-			__DIR__ . '/../database/migrations' => database_path('migrations'),
-		], 'migrations');
+			// Publish migrations
+			$this->publishes([
+				__DIR__ . '/../database/migrations' => database_path('migrations'),
+			], 'migrations');
+		}
 
 		// @settings('key', 'default')
 		Blade::directive('settings', fn($expression) => "<?php echo e(settings()->get($expression)); ?>");
@@ -52,23 +73,5 @@ class SettingsServiceProvider extends PackageServiceProvider
 
 		// @hasSettingsForGroup('group', 'key')
 		Blade::if('hasSettingsForGroup', fn($group, $key) => settings()->group($group)->has($key));
-	}
-
-	public function configurePackage(Package $package): void
-	{
-		/*
-		 * This class is a Package Service Provider
-		 *
-		 * More info: https://github.com/spatie/laravel-package-tools
-		 */
-		$package->name('settings')
-			->hasCommands([
-				SettingsListCommand::class,
-				SettingsSetCommand::class,
-				SettingsGetCommand::class,
-				SettingsDeleteCommand::class,
-				SettingsClearCacheCommand::class,
-				SettingsGroupsCommand::class,
-			]);
 	}
 }

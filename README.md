@@ -7,8 +7,6 @@
 
 > Elegant package for managing **application settings** in Laravel — with caching and multiple access methods.
 
----
-
 ## ✨ Features
 
 - ⚡ **Cache** – built-in cache layer for speed
@@ -17,19 +15,56 @@
 - 🔄 **Fluent API** – method chaining for clean code
 - 🗂️ **Groups** – organize settings by logical groups (e.g., `admin`, `user`, `tenant`) for scoped configuration
 
----
-
 ## 📦 Installation
+
+Install the package via Composer:
 
 ```bash
 composer require rdcstarr/laravel-settings
 ```
 
-Publish & migrate:
+1. **Publish migrations files** (optional):
+   ```bash
+   php artisan vendor:publish --provider="Rdcstarr\Settings\SettingsServiceProvider" --tag="migrations"
+   ```
 
+2. **Migrate** (required):
+   ```bash
+   php artisan migrate
+   ```
+
+## 🛠️ Artisan Commands
+
+The package provides dedicated Artisan commands for managing settings directly from the command line:
+
+#### Clear cache
 ```bash
-php artisan vendor:publish --provider="Rdcstarr\Settings\SettingsServiceProvider" --tag="migrations" // optional
-php artisan migrate
+php artisan settings:clear-cache [--group=] [--force]
+```
+
+#### Delete settings
+```bash
+php artisan settings:delete [key] [--group=] [--force]
+```
+
+#### Get setting
+```bash
+php artisan settings:get [key] [--group=]
+```
+
+#### List all groups
+```bash
+php artisan settings:groups
+```
+
+#### List all settings for specific group
+```bash
+php artisan settings:list [--group=]
+```
+
+#### Set setting
+```bash
+php artisan settings:set [key] [value] [--group=]
 ```
 
 ## 🔑 Usage
@@ -127,75 +162,6 @@ settings()->flushAllCache();                      // clear all groups cache
 @settingsForGroup('social', 'twitter_handle')
 ```
 
-## 🎯 Artisan Commands
-
-The package provides dedicated Artisan commands for managing settings directly from the command line:
-
-### List Settings
-```bash
-# List all settings from default group
-php artisan settings:list
-
-# List settings from a specific group
-php artisan settings:list --group=admin
-```
-
-### Set Settings
-```bash
-# Interactive mode (prompts for input)
-php artisan settings:set
-
-# Set with arguments
-php artisan settings:set app.name "My Application"
-
-# Set with specific group
-php artisan settings:set site_name "Admin Panel" --group=admin
-```
-
-### Get Settings
-```bash
-# Interactive mode
-php artisan settings:get
-
-# Get specific setting
-php artisan settings:get app.name
-
-# Get from specific group
-php artisan settings:get site_name --group=admin
-```
-
-### Delete Settings
-```bash
-# Interactive mode
-php artisan settings:delete
-
-# Delete specific setting
-php artisan settings:delete old.setting
-
-# Delete from group with force (skip confirmation)
-php artisan settings:delete old_config --group=admin --force
-```
-
-### Clear Cache
-```bash
-# Clear all cache (with confirmation)
-php artisan settings:clear-cache
-
-# Clear specific group cache
-php artisan settings:clear-cache --group=admin
-
-# Skip confirmation
-php artisan settings:clear-cache --force
-```
-
-### List Groups
-```bash
-# List all available groups
-php artisan settings:groups
-```
-
-All commands feature interactive prompts using Laravel Prompts for a beautiful CLI experience with validation, confirmations, and colorful output.
-
 ## 💡 Examples
 ```php
 // User preferences with groups
@@ -217,10 +183,6 @@ if (settings()->group('features')->get('new_dashboard', false)) {
     // Enable new dashboard feature
 }
 
-// Multi-tenant settings
-$tenantId = tenant()->id;
-settings()->group("tenant_{$tenantId}")->set('branding_color', '#ff6b6b');
-
 // Get user preferences in one call
 $userPrefs = settings()->group('user_' . auth()->id())
     ->getMany(['theme', 'language', 'timezone']);
@@ -232,10 +194,10 @@ composer test
 ```
 
 ## 📖 Resources
- - [Changelog](CHANGELOG.md) for more information on what has changed recently.
+ - [Changelog](CHANGELOG.md) for more information on what has changed recently. ✍️
 
 ## 👥 Credits
- - [Rdcstarr](https://github.com/rdcstarr)
+ - [Rdcstarr](https://github.com/rdcstarr) 🙌
 
 ## 📜 License
- - [License](LICENSE.md) for more information.
+ - [License](LICENSE.md) for more information. ⚖️

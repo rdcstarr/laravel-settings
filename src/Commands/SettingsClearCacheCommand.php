@@ -2,8 +2,8 @@
 
 namespace Rdcstarr\Settings\Commands;
 
+use Exception;
 use Illuminate\Console\Command;
-
 use function Laravel\Prompts\confirm;
 
 class SettingsClearCacheCommand extends Command
@@ -27,42 +27,34 @@ class SettingsClearCacheCommand extends Command
 	/**
 	 * Execute the console command.
 	 */
-	public function handle(): int
+	public function handle(): void
 	{
 		$group = $this->option('group');
-		$force = $this->option('force');
 
-		$message = $group ? "clear the settings cache for group '{$group}'" : 'clear all settings cache';
-
-		if (!$force && !confirm("Are you sure you want to {$message}?", false))
+		if (!$this->option('force') && !$this->confirmClear($group))
 		{
-			$this->info('Operation cancelled.');
-
-			return self::SUCCESS;
+			$this->components->warn('Operation cancelled.');
+			return;
 		}
 
-		if ($group)
+		$success = match (!!$group)
 		{
-			$settingsInstance = settings()->group($group);
-			if ($settingsInstance->flushCache())
-			{
-				$this->info("Settings cache for group '{$group}' has been cleared.");
+			true => settings()->group($group)->flushCache(),
+			false => settings()->flushAllCache()
+		};
 
-				return self::SUCCESS;
-			}
-		}
-		else
-		{
-			if (settings()->flushAllCache())
-			{
-				$this->info('All settings cache has been cleared.');
+		throw_unless($success, new Exception('Failed to clear settings cache.'));
 
-				return self::SUCCESS;
-			}
-		}
+		$this->components->success(
+			$group
+			? "Settings cache for group '{$group}' has been cleared."
+			: 'All settings cache has been cleared.'
+		);
+	}
 
-		$this->error('Failed to clear settings cache.');
-
-		return self::FAILURE;
+	private function confirmClear(?string $group): bool
+	{
+		$target = $group ? "group '{$group}'" : 'all settings';
+		return confirm("Are you sure you want to clear the settings cache for {$target}?", false);
 	}
 }

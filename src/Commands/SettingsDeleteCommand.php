@@ -3,7 +3,7 @@
 namespace Rdcstarr\Settings\Commands;
 
 use Illuminate\Console\Command;
-
+use InvalidArgumentException;
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\text;
@@ -30,71 +30,39 @@ class SettingsDeleteCommand extends Command
 	/**
 	 * Execute the console command.
 	 */
-	public function handle(): int
+	public function handle(): void
 	{
-		$key   = $this->argument('key');
-		$group = $this->option('group');
-		$force = $this->option('force');
+		$key = $this->argument('key')
+			?: text('Enter the setting key to delete', 'e.g., app.name', required: true)
+			?: throw new InvalidArgumentException('Setting key is required.');
 
-		if (!$key)
+		$availableGroups = settings()->getAllGroups();
+		$group           = $this->option('group') ?: (
+			$availableGroups->isNotEmpty()
+			? select('Select the setting group', $availableGroups->prepend('default')->unique()->toArray(), 'default')
+			: text('Enter the setting group', "Leave empty to use 'default'", default: 'default')
+		);
+
+		$instance = settings()->group($group);
+
+		if (!$instance->has($key))
 		{
-			$key = text(
-				label: 'Enter setting key to delete',
-				placeholder: 'e.g., app.name',
-				required: true
-			);
+			$this->components->warn("The setting '{$key}' does not exist in group '{$group}'.");
+			return;
 		}
 
-		if (!$key)
+		if (!$this->option('force') && !confirm("Are you sure you want to delete the setting '{$key}' from the group '{$group}'?", false))
 		{
-			$this->error('Setting key is required.');
-
-			return self::FAILURE;
+			$this->components->error('Operation cancelled.');
+			return;
 		}
 
-		if (!$group)
+		if (!$instance->forget($key))
 		{
-			$availableGroups = settings()->getAllGroups();
-
-			$group = ($availableGroups->isNotEmpty()) ? select(
-				label: 'Select setting group',
-				options: $availableGroups->prepend('default')->unique()->toArray(),
-				default: 'default'
-			) : text(
-				label: 'Enter setting group',
-				placeholder: 'Leave empty for default',
-				default: 'default'
-			);
+			$this->components->error('Failed to delete the setting.');
+			return;
 		}
 
-		$settingsInstance = $group && $group !== 'default' ? settings()->group($group) : settings();
-
-		if (!$settingsInstance->has($key))
-		{
-			$groupInfo = $group && $group !== 'default' ? " in group '{$group}'" : '';
-			$this->warn("Setting '{$key}' does not exist{$groupInfo}.");
-
-			return self::SUCCESS;
-		}
-
-		$groupInfo = $group && $group !== 'default' ? " from group '{$group}'" : '';
-
-		if (!$force && !confirm("Are you sure you want to delete setting '{$key}'{$groupInfo}?", false))
-		{
-			$this->info('Operation cancelled.');
-
-			return self::SUCCESS;
-		}
-
-		if ($settingsInstance->forget($key))
-		{
-			$this->info("Setting '{$key}' has been deleted{$groupInfo}.");
-
-			return self::SUCCESS;
-		}
-
-		$this->error('Failed to delete setting.');
-
-		return self::FAILURE;
+		$this->components->success("The setting '{$key}' in group '{$group}' has been deleted.");
 	}
 }

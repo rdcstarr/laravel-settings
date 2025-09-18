@@ -3,7 +3,7 @@
 namespace Rdcstarr\Settings\Commands;
 
 use Illuminate\Console\Command;
-
+use InvalidArgumentException;
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\text;
 
@@ -28,56 +28,28 @@ class SettingsGetCommand extends Command
 	/**
 	 * Execute the console command.
 	 */
-	public function handle(): int
+	public function handle(): void
 	{
-		$key   = $this->argument('key');
-		$group = $this->option('group');
+		$key = $this->argument('key')
+			?: text('Enter the setting key to get', 'e.g., app.name', required: true)
+			?: throw new InvalidArgumentException('Setting key is required.');
 
-		if (!$key)
+		$availableGroups = settings()->getAllGroups();
+		$group           = $this->option('group') ?: (
+			$availableGroups->isNotEmpty()
+			? select('Select the setting group', $availableGroups->prepend('default')->unique()->toArray(), 'default')
+			: text('Enter the setting group', "Leave empty to use 'default'", default: 'default')
+		);
+
+		$instance = settings()->group($group);
+
+		if (!$instance->has($key))
 		{
-			$key = text(
-				label: 'Enter setting key',
-				placeholder: 'e.g., app.name',
-				required: true
-			);
+			$this->components->warn("The setting '{$key}' does not exist in group '{$group}'.");
+			return;
 		}
 
-		if (!$key)
-		{
-			$this->error('Setting key is required.');
-
-			return self::FAILURE;
-		}
-
-		if (!$group)
-		{
-			$availableGroups = settings()->getAllGroups();
-
-			$group = ($availableGroups->isNotEmpty()) ? select(
-				label: 'Select setting group',
-				options: $availableGroups->prepend('default')->unique()->toArray(),
-				default: 'default'
-			) : text(
-				label: 'Enter setting group',
-				placeholder: 'Leave empty for default',
-				default: 'default'
-			);
-		}
-
-		$settingsInstance = $group && $group !== 'default' ? settings()->group($group) : settings();
-
-		if (!$settingsInstance->has($key))
-		{
-			$groupInfo = $group && $group !== 'default' ? " in group '{$group}'" : '';
-			$this->warn("Setting '{$key}' not found{$groupInfo}.");
-
-			return self::SUCCESS;
-		}
-
-		$groupInfo = $group && $group !== 'default' ? " (Group: {$group})" : '';
-		$this->info("Setting '{$key}'{$groupInfo}:");
-		$this->line($settingsInstance->get($key));
-
-		return self::SUCCESS;
+		$this->components->info("Setting '{$key}' from '{$group}':");
+		$this->line('  ' . $instance->get($key));
 	}
 }

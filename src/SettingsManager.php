@@ -2,18 +2,15 @@
 
 namespace Rdcstarr\Settings;
 
+use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use InvalidArgumentException;
 use Rdcstarr\Settings\Models\Setting;
 use Throwable;
 
 class SettingsManager
 {
-	/**
-	 * The cache key used for storing settings.
-	 */
-	protected string $cacheKey = 'app_settings';
-
 	/**
 	 * Group name for settings (future use).
 	 */
@@ -26,7 +23,8 @@ class SettingsManager
 	 */
 	public function all(): Collection
 	{
-		return Cache::rememberForever($this->cacheKey(), fn() => Setting::whereGroup($this->group)->pluck('value', 'key'));
+		return Cache::tags(['settings', "settings.group.{$this->group}"])
+			->rememberForever("data", fn() => Setting::whereGroup($this->group)->pluck('value', 'key'));
 	}
 
 	/**
@@ -49,9 +47,15 @@ class SettingsManager
 	 * @param  string  $key  The setting key to retrieve.
 	 * @param  mixed  $default  The default value to return if the key doesn't exist.
 	 * @return mixed The setting value or the default value if not found.
+	 * @throws InvalidArgumentException If the key doesn't exist and no default is provided.
 	 */
 	public function get(string $key, mixed $default = null): mixed
 	{
+		if ($default === null && !$this->has($key))
+		{
+			throw new InvalidArgumentException("Settings key '{$key}' doesn't exist for group '{$this->group}'.");
+		}
+
 		return $this->all()->get($key, $default);
 	}
 
@@ -65,6 +69,14 @@ class SettingsManager
 	{
 		$all = $this->all();
 
+		$missingKeys = collect($keys)->reject(fn($key) => $all->has($key));
+
+		$missingKeys->whenNotEmpty(function ($missing)
+		{
+			$firstMissing = $missing->first();
+			throw new InvalidArgumentException("Settings key '{$firstMissing}' doesn't exist for group '{$this->group}'.");
+		});
+
 		return collect($keys)->mapWithKeys(fn($key) => [$key => $all->get($key)])->all();
 	}
 
@@ -73,17 +85,16 @@ class SettingsManager
 	 *
 	 * @param  string|array  $key  The setting key (string) or an array of key-value pairs.
 	 * @param  mixed  $value  The value to set (ignored when $key is an array).
-	 * @return bool True if the operation was successful, false otherwise.
+	 * @return bool
 	 */
 	public function set(string|array $key, mixed $value = null): bool
 	{
+		if (is_array($key))
+		{
+			return $this->setMany($key);
+		}
 		try
 		{
-			if (is_array($key))
-			{
-				return $this->setMany($key);
-			}
-
 			Setting::updateOrCreate(
 				['group' => $this->group, 'key' => $key],
 				['value' => $value]
@@ -92,11 +103,10 @@ class SettingsManager
 			$this->flushCache();
 
 			return true;
-		}
-		catch (Throwable $e)
-		{
-			report($e);
 
+		}
+		catch (Exception $e)
+		{
 			return false;
 		}
 	}
@@ -105,17 +115,19 @@ class SettingsManager
 	 * Set multiple settings in a single batch operation.
 	 *
 	 * @param  array  $settings  An associative array of key-value pairs to store.
-	 * @return bool True if the operation was successful, false otherwise.
+	 * @return bool
+	 * @throws InvalidArgumentException If the values array is empty.
 	 */
 	public function setMany(array $settings): bool
 	{
 		if (empty($settings))
 		{
-			return true;
+			throw new InvalidArgumentException('Values array cannot be empty.');
 		}
 
 		try
 		{
+
 			$data = collect($settings)->map(fn($value, $key) => [
 				'group'      => $this->group,
 				'key'        => $key,
@@ -129,10 +141,8 @@ class SettingsManager
 
 			return true;
 		}
-		catch (Throwable $e)
+		catch (Exception $e)
 		{
-			report($e);
-
 			return false;
 		}
 	}
@@ -162,51 +172,34 @@ class SettingsManager
 	 * Remove a setting by its key from the storage.
 	 *
 	 * @param  string  $key  The setting key to remove.
-	 * @return bool True if the key was successfully deleted, false if not found or on error.
+	 * @return void
 	 */
-	public function forget(string $key): bool
+	public function forget(string $key): void
 	{
-		try
+		$deleted = Setting::where([
+			'group' => $this->group,
+			'key'   => $key,
+		])->delete();
+
+		if ($deleted > 0)
 		{
-			$deleted = Setting::where([
-				'group' => $this->group,
-				'key'   => $key,
-			])->delete();
-
-			if ($deleted > 0)
-			{
-				$this->flushCache();
-
-				return true;
-			}
-
-			return false;
-		}
-		catch (Throwable $e)
-		{
-			report($e);
-
-			return false;
+			$this->flushCache();
 		}
 	}
 
 	/**
 	 * Clear all settings cache for all groups.
 	 *
-	 * @return bool True if all caches were successfully cleared, false otherwise.
+	 * @return bool
 	 */
 	public function flushAllCache(): bool
 	{
 		try
 		{
-			Setting::distinct('group')->pluck('group')->each(function ($group)
-			{
-				Cache::forget("{$this->cacheKey}:{$group}");
-			});
-
+			Cache::tags(['settings'])->flush();
 			return true;
 		}
-		catch (Throwable $e)
+		catch (Exception $e)
 		{
 			return false;
 		}
@@ -215,27 +208,18 @@ class SettingsManager
 	/**
 	 * Clear the settings cache to force fresh data retrieval.
 	 *
-	 * @return bool True if the cache was successfully cleared, false otherwise.
+	 * @return void
 	 */
 	public function flushCache(): bool
 	{
 		try
 		{
-			Cache::forget($this->cacheKey());
-
+			Cache::tags(["settings.group.{$this->group}"])->flush();
 			return true;
 		}
-		catch (Throwable $e)
+		catch (Exception $e)
 		{
 			return false;
 		}
-	}
-
-	/**
-	 * Cheia de cache pentru grupul curent.
-	 */
-	protected function cacheKey(): string
-	{
-		return "{$this->cacheKey}:{$this->group}";
 	}
 }

@@ -49,9 +49,9 @@ class SettingsManager
 	 * @return mixed The setting value or the default value if not found.
 	 * @throws InvalidArgumentException If the key doesn't exist and no default is provided.
 	 */
-	public function get(string $key, mixed $default = null): mixed
+	public function get(string $key, mixed $default = ''): mixed
 	{
-		if ($default === null && !$this->has($key))
+		if (blank($default) && !$this->has($key))
 		{
 			throw new InvalidArgumentException("Settings key '{$key}' doesn't exist for group '{$this->group}'.");
 		}
@@ -93,6 +93,7 @@ class SettingsManager
 		{
 			return $this->setMany($key);
 		}
+
 		try
 		{
 			Setting::updateOrCreate(

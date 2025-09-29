@@ -2,11 +2,11 @@
 
 namespace Rdcstarr\Settings;
 
-use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use InvalidArgumentException;
 use Rdcstarr\Settings\Models\Setting;
+use Rdcstarr\Settings\Exceptions\SettingsOperationException;
 use Throwable;
 
 class SettingsManager
@@ -45,18 +45,17 @@ class SettingsManager
 	 * Get the value of a specific setting by its key.
 	 *
 	 * @param  string  $key  The setting key to retrieve.
-	 * @param  mixed  $default  The default value to return if the key doesn't exist.
-	 * @return mixed The setting value or the default value if not found.
-	 * @throws InvalidArgumentException If the key doesn't exist and no default is provided.
+	 * @return mixed The setting value.
+	 * @throws InvalidArgumentException If the key doesn't exist.
 	 */
-	public function get(string $key, mixed $default = ''): mixed
+	public function get(string $key): mixed
 	{
-		if ($default === '' && !$this->has($key))
+		if (!$this->has($key))
 		{
 			throw new InvalidArgumentException("Settings key '{$key}' doesn't exist for group '{$this->group}'.");
 		}
 
-		return $this->all()->get($key, $default);
+		return $this->all()->get($key);
 	}
 
 	/**
@@ -85,7 +84,8 @@ class SettingsManager
 	 *
 	 * @param  string|array  $key  The setting key (string) or an array of key-value pairs.
 	 * @param  mixed  $value  The value to set (ignored when $key is an array).
-	 * @return bool
+	 * @return bool True when persisted successfully.
+	 * @throws SettingsOperationException If persisting or cache flushing fails.
 	 */
 	public function set(string|array $key, mixed $value = null): bool
 	{
@@ -100,24 +100,27 @@ class SettingsManager
 				['group' => $this->group, 'key' => $key],
 				['value' => $value]
 			);
-
-			$this->flushCache();
-
-			return true;
-
 		}
-		catch (Exception $e)
+		catch (Throwable $e)
 		{
-			return false;
+			throw new SettingsOperationException("Failed to set setting '{$key}' for group '{$this->group}'.", 0, $e);
 		}
+
+		if (!$this->flushCache())
+		{
+			throw new SettingsOperationException("Failed to flush cache after setting '{$key}' for group '{$this->group}'.");
+		}
+
+		return true;
 	}
 
 	/**
 	 * Set multiple settings in a single batch operation.
 	 *
 	 * @param  array  $settings  An associative array of key-value pairs to store.
-	 * @return bool
+	 * @return bool True when persisted successfully.
 	 * @throws InvalidArgumentException If the values array is empty.
+	 * @throws SettingsOperationException If persisting or cache flushing fails.
 	 */
 	public function setMany(array $settings): bool
 	{
@@ -128,7 +131,6 @@ class SettingsManager
 
 		try
 		{
-
 			$data = collect($settings)->map(fn($value, $key) => [
 				'group'      => $this->group,
 				'key'        => $key,
@@ -138,14 +140,18 @@ class SettingsManager
 			])->values()->toArray();
 
 			Setting::upsert($data, ['group', 'key'], ['value', 'updated_at']);
-			$this->flushCache();
-
-			return true;
 		}
-		catch (Exception $e)
+		catch (Throwable $e)
 		{
-			return false;
+			throw new SettingsOperationException('Failed to persist settings batch operation.', 0, $e);
 		}
+
+		if (!$this->flushCache())
+		{
+			throw new SettingsOperationException('Failed to flush cache after persisting settings batch operation.');
+		}
+
+		return true;
 	}
 
 	/**
@@ -173,18 +179,28 @@ class SettingsManager
 	 * Remove a setting by its key from the storage.
 	 *
 	 * @param  string  $key  The setting key to remove.
-	 * @return void
+	 * @return bool
 	 */
-	public function forget(string $key): void
+	public function forget(string $key): bool
 	{
-		$deleted = Setting::where([
-			'group' => $this->group,
-			'key'   => $key,
-		])->delete();
-
-		if ($deleted > 0)
+		try
 		{
-			$this->flushCache();
+			$deleted = Setting::where([
+				'group' => $this->group,
+				'key'   => $key,
+			])->delete();
+
+			if ($deleted === 0)
+			{
+				return false;
+			}
+
+			return $this->flushCache();
+		}
+		catch (Throwable $e)
+		{
+			report($e);
+			return false;
 		}
 	}
 
@@ -197,11 +213,11 @@ class SettingsManager
 	{
 		try
 		{
-			Cache::tags(['settings'])->flush();
-			return true;
+			return Cache::tags(['settings'])->flush();
 		}
-		catch (Exception $e)
+		catch (Throwable $e)
 		{
+			report($e);
 			return false;
 		}
 	}
@@ -215,11 +231,11 @@ class SettingsManager
 	{
 		try
 		{
-			Cache::tags(["settings.group.{$this->group}"])->flush();
-			return true;
+			return Cache::tags(["settings.group.{$this->group}"])->flush();
 		}
-		catch (Exception $e)
+		catch (Throwable $e)
 		{
+			report($e);
 			return false;
 		}
 	}

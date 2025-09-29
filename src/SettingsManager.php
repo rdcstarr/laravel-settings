@@ -48,14 +48,14 @@ class SettingsManager
 	 * @return mixed The setting value.
 	 * @throws InvalidArgumentException If the key doesn't exist.
 	 */
-	public function get(string $key): mixed
+	public function get(string $key, mixed $default = ''): mixed
 	{
-		if (!$this->has($key))
+		if ($default === '' && !$this->has($key))
 		{
 			throw new InvalidArgumentException("Settings key '{$key}' doesn't exist for group '{$this->group}'.");
 		}
 
-		return $this->all()->get($key);
+		return $this->all()->get($key, $default);
 	}
 
 	/**

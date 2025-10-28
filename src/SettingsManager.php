@@ -23,8 +23,16 @@ class SettingsManager
 	 */
 	public function all(): Collection
 	{
-		return Cache::tags(['settings', "settings.group.{$this->group}"])
-			->rememberForever("data", fn() => Setting::whereGroup($this->group)->pluck('value', 'key'));
+		$tags = [
+			"settings",
+			"settings.group.{$this->group}",
+		];
+
+		return Cache::tags($tags)
+			->rememberForever(
+				"data",
+				fn() => Setting::whereGroup($this->group)->pluck('value', 'key')
+			);
 	}
 
 	/**
@@ -44,7 +52,7 @@ class SettingsManager
 	/**
 	 * Get the value of a specific setting by its key.
 	 *
-	 * @param  string  $key  The setting key to retrieve.
+	 * @param  string $key The setting key to retrieve.
 	 * @return mixed The setting value.
 	 * @throws InvalidArgumentException If the key doesn't exist.
 	 */
@@ -87,7 +95,7 @@ class SettingsManager
 	 * @return bool True when persisted successfully.
 	 * @throws SettingsOperationException If persisting or cache flushing fails.
 	 */
-	public function set(string|array $key, mixed $value = null): bool
+	public function set(string|array $key, mixed $value = false): bool
 	{
 		if (is_array($key))
 		{

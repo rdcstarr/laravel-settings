@@ -9,7 +9,7 @@ if (!function_exists('settings'))
 	 * @param mixed $default
 	 * @return mixed
 	 */
-	function settings(?string $key = null, mixed $default = '')
+	function settings(?string $key = null, mixed $default = false)
 	{
 		$setting = app('settings');
 
@@ -31,7 +31,7 @@ if (!function_exists('_s'))
 	 * @param mixed $default
 	 * @return mixed
 	 */
-	function _s(?string $key = null, mixed $default = '')
+	function _s(?string $key = null, mixed $default = false)
 	{
 		$setting = app('settings');
 

@@ -33,7 +33,7 @@ class SettingsServiceProvider extends PackageServiceProvider
 	{
 		parent::register();
 
-		$this->app->singleton('settings', Settings::class);
+		$this->app->singleton('settings', SettingsService::class);
 	}
 
 	public function boot(): void

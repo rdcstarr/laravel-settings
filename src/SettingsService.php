@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Cache;
 use Rdcstarr\Settings\Models\Setting;
 use Throwable;
 
-class Settings
+class SettingsService
 {
 	/**
 	 * The cache key used to store settings.

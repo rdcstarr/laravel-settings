@@ -3,8 +3,6 @@
 namespace Rdcstarr\Settings\Commands;
 
 use Illuminate\Console\Command;
-use function Laravel\Prompts\select;
-use function Laravel\Prompts\text;
 
 class SettingsListCommand extends Command
 {
@@ -13,36 +11,29 @@ class SettingsListCommand extends Command
 	 *
 	 * @var string
 	 */
-	protected $signature = 'settings:list {--group= : The setting group to list from}';
+	protected $signature = 'settings:list';
 
 	/**
 	 * The console command description.
 	 *
 	 * @var string
 	 */
-	protected $description = 'List all settings from a specific group';
+	protected $description = 'List all settings';
 
 	/**
 	 * Execute the console command.
 	 */
-	public function handle()
+	public function handle(): void
 	{
-		$availableGroups = settings()->getAllGroups();
-		$group           = $this->option('group') ?: (
-			$availableGroups->isNotEmpty()
-			? select('Select the setting group', $availableGroups->prepend('default')->unique()->toArray(), 'default')
-			: text('Enter the setting group', "Leave empty to use 'default'", default: 'default')
-		);
-
-		$settings = settings()->group($group)->all();
+		$settings = settings()->all();
 
 		if ($settings->isEmpty())
 		{
-			$this->components->warn("No settings were found in the group '{$group}'.");
+			$this->components->warn('No settings found.');
 			return;
 		}
 
-		$this->components->info("List all settings in group '{$group}':");
+		$this->components->info('All settings:');
 		$this->table(
 			['Key', 'Value', 'Type'],
 			$settings->map(fn($value, $key) => [

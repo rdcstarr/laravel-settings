@@ -5,15 +5,15 @@
 [![Code Style](https://img.shields.io/github/actions/workflow/status/rdcstarr/laravel-settings/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/rdcstarr/laravel-settings/actions)
 [![Downloads](https://img.shields.io/packagist/dt/rdcstarr/laravel-settings.svg?style=flat-square)](https://packagist.org/packages/rdcstarr/laravel-settings)
 
-> Elegant package for managing **application settings** in Laravel — with caching and multiple access methods.
+> Simple settings management for Laravel — because configuration should be easy.
 
 ## ✨ Features
 
-- ⚡ **Cache** – built-in cache layer for speed
-- 🎯 **Access** – helper, facade, or DI
-- 📦 **Batch ops** – set multiple values at once
-- 🔄 **Fluent API** – method chaining for clean code
-- 🗂️ **Groups** – organize settings by logical groups (e.g., `admin`, `user`, `tenant`) for scoped configuration
+-   ⚡ **Cache built-in** – automatic caching for blazing-fast reads
+-   🔄 **Smart type casting** – automatic conversion between strings, integers, booleans, arrays, and JSON
+-   📦 **Batch operations** – set multiple values at once with `setMany()`
+-   🛠️ **Artisan commands** – manage settings directly from the terminal
+-   💯 **No exceptions** – returns `false` on failure, never crashes your app
 
 ## 📦 Installation
 
@@ -24,180 +24,170 @@ composer require rdcstarr/laravel-settings
 ```
 
 1. **Publish migrations files** (optional):
-   ```bash
-   php artisan vendor:publish --provider="Rdcstarr\Settings\SettingsServiceProvider"
-   ```
+
+    ```bash
+    php artisan vendor:publish --provider="Rdcstarr\Settings\SettingsServiceProvider"
+    ```
 
 2. **Migrate** (required):
-   ```bash
-   php artisan migrate
-   ```
+    ```bash
+    php artisan migrate
+    ```
 
 ## 🛠️ Artisan Commands
 
-The package provides dedicated Artisan commands for managing settings directly from the command line:
+Manage your settings directly from the command line:
 
-#### Clear cache
 ```bash
-php artisan settings:clear-cache [--group=] [--force]
-```
+# List all settings
+php artisan settings:list
 
-#### Delete settings
-```bash
-php artisan settings:delete [key] [--group=] [--force]
-```
+# Get a specific setting
+php artisan settings:get app.name
 
-#### Get setting
-```bash
-php artisan settings:get [key] [--group=]
-```
+# Set a setting
+php artisan settings:set app.name "My Application"
 
-#### List all groups
-```bash
-php artisan settings:groups
-```
+# Delete a setting
+php artisan settings:delete old.setting [--force]
 
-#### List all settings for specific group
-```bash
-php artisan settings:list [--group=]
-```
-
-#### Set setting
-```bash
-php artisan settings:set [key] [value] [--group=]
+# Clear cache
+php artisan settings:clear-cache [--force]
 ```
 
 ## 🔑 Usage
 
-### Set Values
+### Basic Operations
+
 ```php
-// single
-settings()->set('app.name', 'My App');
+// Get a setting (returns false if not found)
+$name = settings()->get('app.name', 'Default Name');
 
-// batch
-settings()->set([
-    'mail.driver' => 'smtp',
-    'mail.host' => 'smtp.example.com',
-    'mail.port' => 587,
-    'mail.encryption' => 'tls',
-]);
+// Set a setting (returns true on success, false if unchanged or failed)
+settings()->set('app.name', 'My Application');
 
-// or use setMany for cleaner syntax
+// Check if a setting exists
+if (settings()->has('app.name')) {
+    // Setting exists
+}
+
+// Delete a setting (returns true if deleted, false otherwise)
+settings()->delete('old.setting');
+
+// Get all settings
+$all = settings()->all(); // Collection
+```
+
+### Batch Operations
+
+```php
+// Set multiple settings at once
 settings()->setMany([
+    'app.name' => 'My Application',
     'app.theme' => 'dark',
     'app.language' => 'en',
-    'app.timezone' => 'UTC',
+    'mail.driver' => 'smtp',
+    'mail.host' => 'smtp.example.com',
 ]);
 ```
 
-### Get Values
-```php
-$theme = settings('app.theme', 'light'); // with default
-$all   = settings()->all();              // all values
+### Helper Function
 
-// get multiple values at once
-$config = settings()->getMany(['app.theme', 'app.language', 'app.timezone']);
-// returns: ['app.theme' => 'dark', 'app.language' => 'en', 'app.timezone' => 'UTC']
+```php
+// Quick access with helper
+$theme = settings('app.theme', 'light');
+
+// Same as
+$theme = settings()->get('app.theme', 'light');
 ```
 
-### Working with Groups
-```php
-// set values in specific group
-settings()->group('admin')->set('site_name', 'My Admin Panel');
-settings()->group('user')->set('theme', 'dark');
+### Using the Facade
 
-// get values from specific group
-$siteName = settings()->group('admin')->get('site_name', 'Default Site');
-$userTheme = settings()->group('user')->get('theme', 'light');
-
-// get all values from a group
-$adminSettings = settings()->group('admin')->all();
-```
-
-### Facade
 ```php
 use Rdcstarr\Settings\Facades\Settings;
 
 Settings::set('app.name', 'My App');
-$driver = Settings::get('mail.driver', 'smtp');
-
-// working with groups via facade
-Settings::group('admin')->set('dashboard_style', 'modern');
-$style = Settings::group('admin')->get('dashboard_style', 'classic');
+$name = Settings::get('app.name', 'Default');
+Settings::delete('old.setting');
 ```
 
-### Extra Operations
+### Cache Management
+
 ```php
-settings()->has('app.name');       // check existence
-settings()->forget('old.setting'); // delete
-settings()->flushCache();          // clear cache
-
-// group-specific operations
-settings()->group('admin')->has('site_name');     // check in specific group
-settings()->group('admin')->forget('old_config'); // delete from specific group
-settings()->flushAllCache();                      // clear all groups cache
-```
----
-## 🎨 Blade Directives
-```php
-{{-- Simple settings --}}
-@settings('app_name', 'Default')
-
-{{-- Settings from specific group --}}
-@settingsForGroup('admin', 'site_name', 'My Site')
-@settingsForGroup('user', 'theme', 'light')
-
-{{-- Conditional checks --}}
-@hasSettings('maintenance_mode')
-    <div class="alert">Maintenance mode active</div>
-@endhasSettings
-
-{{-- Conditional checks for specific group --}}
-@hasSettingsForGroup('admin', 'debug_mode')
-    <div class="debug-info">Debug mode enabled</div>
-@endhasSettingsForGroup
-
-{{-- More examples --}}
-@settingsForGroup('mail', 'from_name', 'Laravel App')
-@settingsForGroup('social', 'twitter_handle')
+// Clear the cache (returns true on success)
+settings()->flushCache();
 ```
 
-## 💡 Examples
-```php
-// User preferences with groups
-settings()->group('user_' . auth()->id())->setMany([
-    'theme' => 'dark',
-    'language' => 'en',
-    'timezone' => 'Europe/London',
-]);
+### Smart Type Casting
 
-// Admin configuration
-settings()->group('admin')->setMany([
-    'site_name' => 'My Application',
-    'maintenance_mode' => false,
-    'debug_enabled' => true,
+The package automatically handles type conversion:
+
+```php
+// Integers
+settings()->set('max_users', 100);
+settings()->get('max_users'); // returns (int) 100
+
+// Booleans
+settings()->set('maintenance_mode', true);
+settings()->get('maintenance_mode'); // returns (bool) true
+
+// Arrays
+settings()->set('config', ['key' => 'value']);
+settings()->get('config'); // returns array
+
+// Null values
+settings()->set('optional', null);
+settings()->get('optional'); // returns null
+```
+
+## 💡 Real-World Examples
+
+```php
+// Application configuration
+settings()->setMany([
+    'site.name' => 'My Website',
+    'site.description' => 'A wonderful site',
+    'site.maintenance_mode' => false,
 ]);
 
 // Feature flags
-if (settings()->group('features')->get('new_dashboard', false)) {
-    // Enable new dashboard feature
+if (settings()->get('features.new_dashboard', false)) {
+    return view('dashboard.new');
 }
 
-// Get user preferences in one call
-$userPrefs = settings()->group('user_' . auth()->id())
-    ->getMany(['theme', 'language', 'timezone']);
+// User preferences
+settings()->set("user.{$userId}.theme", 'dark');
+settings()->set("user.{$userId}.language", 'en');
+
+// Email settings
+$mailConfig = [
+    'mail.driver' => 'smtp',
+    'mail.host' => 'smtp.mailtrap.io',
+    'mail.port' => 2525,
+    'mail.username' => 'user',
+    'mail.password' => 'pass',
+];
+settings()->setMany($mailConfig);
+
+// API keys and secrets
+settings()->set('services.stripe.key', 'sk_test_...');
+settings()->set('services.stripe.secret', 'whsec_...');
 ```
 
 ## 🧪 Testing
+
 ```bash
 composer test
 ```
 
 ## 📖 Resources
- - [Changelog](CHANGELOG.md) for more information on what has changed recently. ✍️
+
+-   [Changelog](CHANGELOG.md) for more information on what has changed recently. ✍️
 
 ## 👥 Credits
- - [Rdcstarr](https://github.com/rdcstarr) 🙌
+
+-   [Rdcstarr](https://github.com/rdcstarr) 🙌
 
 ## 📜 License
- - [License](LICENSE.md) for more information. ⚖️
+
+-   [License](LICENSE.md) for more information. ⚖️

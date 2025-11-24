@@ -14,12 +14,9 @@ return new class extends Migration
 		Schema::create('settings', function (Blueprint $table)
 		{
 			$table->id();
-			$table->string('group')->default('default')->index();
-			$table->string('key')->index();
+			$table->string('key')->unique();
 			$table->longText('value');
 			$table->timestamps();
-
-			$table->unique(['group', 'key']);
 		});
 	}
 

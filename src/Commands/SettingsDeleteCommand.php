@@ -5,7 +5,6 @@ namespace Rdcstarr\Settings\Commands;
 use Illuminate\Console\Command;
 use InvalidArgumentException;
 use function Laravel\Prompts\confirm;
-use function Laravel\Prompts\select;
 use function Laravel\Prompts\text;
 
 class SettingsDeleteCommand extends Command
@@ -17,7 +16,6 @@ class SettingsDeleteCommand extends Command
 	 */
 	protected $signature = 'settings:delete
 		{key? : The setting key}
-		{--group= : The setting group}
 		{--force : Skip confirmation prompt}';
 
 	/**
@@ -25,7 +23,7 @@ class SettingsDeleteCommand extends Command
 	 *
 	 * @var string
 	 */
-	protected $description = 'Delete a setting from a specific group';
+	protected $description = 'Delete a setting';
 
 	/**
 	 * Execute the console command.
@@ -36,33 +34,24 @@ class SettingsDeleteCommand extends Command
 			?: text('Enter the setting key to delete', 'e.g., app.name', required: true)
 			?: throw new InvalidArgumentException('Setting key is required.');
 
-		$availableGroups = settings()->getAllGroups();
-		$group           = $this->option('group') ?: (
-			$availableGroups->isNotEmpty()
-			? select('Select the setting group', $availableGroups->prepend('default')->unique()->toArray(), 'default')
-			: text('Enter the setting group', "Leave empty to use 'default'", default: 'default')
-		);
-
-		$instance = settings()->group($group);
-
-		if (!$instance->has($key))
+		if (!settings()->has($key))
 		{
-			$this->components->warn("The setting '{$key}' does not exist in group '{$group}'.");
+			$this->components->warn("The setting '{$key}' does not exist.");
 			return;
 		}
 
-		if (!$this->option('force') && !confirm("Are you sure you want to delete the setting '{$key}' from the group '{$group}'?", false))
+		if (!$this->option('force') && !confirm("Are you sure you want to delete the setting '{$key}'?", false))
 		{
 			$this->components->error('Operation cancelled.');
 			return;
 		}
 
-		if (!$instance->forget($key))
+		if (!settings()->delete($key))
 		{
 			$this->components->error('Failed to delete the setting.');
 			return;
 		}
 
-		$this->components->success("The setting '{$key}' in group '{$group}' has been deleted.");
+		$this->components->success("The setting '{$key}' has been deleted.");
 	}
 }

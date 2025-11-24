@@ -10,7 +10,6 @@ use Illuminate\Support\Str;
 class Setting extends Model
 {
 	protected $fillable = [
-		'group',
 		'key',
 		'value',
 	];
@@ -39,53 +38,62 @@ class Setting extends Model
 	 */
 	protected function castValue($value)
 	{
-		if ($value === null)
+		if ($value === null || $value === '')
 		{
 			return null;
 		}
 
-		$value = Str::trim($value);
+		// Quick check: if not a string, return as-is
+		if (!is_string($value))
+		{
+			return $value;
+		}
+
+		$trimmed = trim($value);
+
+		// Check for literal 'null' string
+		if (strcasecmp($trimmed, 'null') === 0)
+		{
+			return null;
+		}
 
 		// Check for boolean values
-		if (Str::lower($value) === 'true')
+		if (strcasecmp($trimmed, 'true') === 0)
 		{
 			return true;
 		}
 
-		if (Str::lower($value) === 'false')
+		if (strcasecmp($trimmed, 'false') === 0)
 		{
 			return false;
 		}
 
-		// Check for null
-		if (Str::lower($value) === 'null')
+		// Check for JSON (array or object) - do this before numeric checks
+		if (strlen($trimmed) > 0 && ($trimmed[0] === '{' || $trimmed[0] === '[') && Str::isJson($trimmed))
 		{
-			return null;
+			return json_decode($trimmed, true);
 		}
 
-		// Check for integer
-		if (Str::startsWith($value, '-') && ctype_digit(Str::substr($value, 1)))
+		// Check for numeric values (int or float)
+		if (is_numeric($trimmed))
 		{
-			return (int) $value;
-		}
-		if (ctype_digit($value))
-		{
-			return (int) $value;
+			// Contains decimal point or scientific notation
+			if (str_contains($trimmed, '.') || stripos($trimmed, 'e') !== false)
+			{
+				return (float) $trimmed;
+			}
+
+			// Integer - but preserve leading zeros by checking if it's a "clean" integer
+			$intValue = (int) $trimmed;
+
+			// If string representation matches original, it's a true integer
+			if ((string) $intValue === $trimmed)
+			{
+				return $intValue;
+			}
 		}
 
-		// Check for float
-		if (is_numeric($value) && Str::contains($value, '.'))
-		{
-			return (float) $value;
-		}
-
-		// Check for JSON (array or object)
-		if (Str::isJson(value: $value))
-		{
-			return json_decode($value, true);
-		}
-
-		// Return as string
+		// Return as string (original, not trimmed, to preserve formatting)
 		return $value;
 	}
 

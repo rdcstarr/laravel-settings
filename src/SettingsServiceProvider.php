@@ -28,7 +28,6 @@ class SettingsServiceProvider extends PackageServiceProvider
 				SettingsGetCommand::class,
 				SettingsDeleteCommand::class,
 				SettingsClearCacheCommand::class,
-				SettingsGroupsCommand::class,
 			]);
 	}
 
@@ -36,7 +35,7 @@ class SettingsServiceProvider extends PackageServiceProvider
 	{
 		parent::register();
 
-		$this->app->singleton('settings', SettingsManager::class);
+		$this->app->singleton('settings', SettingsService::class);
 	}
 
 	public function boot(): void
@@ -53,25 +52,5 @@ class SettingsServiceProvider extends PackageServiceProvider
 				__DIR__ . '/../database/migrations' => database_path('migrations'),
 			], 'migrations');
 		}
-
-		// @settings('key', 'default')
-		Blade::directive('settings', fn($expression) => "<?php echo e(settings()->get($expression)); ?>");
-
-		// @settingsForGroup('group', 'key', 'default')
-		Blade::directive('settingsForGroup', function ($expression)
-		{
-			[$group, $key, $default] = array_pad(explode(',', $expression, 3), 3, null);
-			$group                   = trim($group);
-			$key                     = $key ? trim($key) : "''";
-			$default                 = $default ? trim($default) : 'null';
-
-			return "<?php echo e(settings()->group({$group})->get({$key}, {$default})); ?>";
-		});
-
-		// @hasSettings('key')
-		Blade::if('hasSettings', fn($key) => settings()->has($key));
-
-		// @hasSettingsForGroup('group', 'key')
-		Blade::if('hasSettingsForGroup', fn($group, $key) => settings()->group($group)->has($key));
 	}
 }

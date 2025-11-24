@@ -70,7 +70,7 @@
 				"Rdcstarr\\Settings\\SettingsServiceProvider"
 			],
 			"aliases": {
-				"Settings": "Rdcstarr\\Settings\\Facades\\SettingsService"
+				"Settings": "Rdcstarr\\Settings\\Facades\\Settings"
 			}
 		}
 	}

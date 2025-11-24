@@ -2,11 +2,9 @@
 
 namespace Rdcstarr\Settings;
 
-use Illuminate\Support\Facades\Blade;
 use Rdcstarr\Settings\Commands\SettingsClearCacheCommand;
 use Rdcstarr\Settings\Commands\SettingsDeleteCommand;
 use Rdcstarr\Settings\Commands\SettingsGetCommand;
-use Rdcstarr\Settings\Commands\SettingsGroupsCommand;
 use Rdcstarr\Settings\Commands\SettingsListCommand;
 use Rdcstarr\Settings\Commands\SettingsSetCommand;
 use Spatie\LaravelPackageTools\Package;
@@ -35,7 +33,7 @@ class SettingsServiceProvider extends PackageServiceProvider
 	{
 		parent::register();
 
-		$this->app->singleton('settings', SettingsService::class);
+		$this->app->singleton('settings', Settings::class);
 	}
 
 	public function boot(): void

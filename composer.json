@@ -37,8 +37,7 @@
 	},
 	"autoload": {
 		"psr-4": {
-			"Rdcstarr\\Settings\\": "src/",
-			"Rdcstarr\\Settings\\Database\\Factories\\": "database/factories/"
+			"Rdcstarr\\Settings\\": "src/"
 		},
 		"files": [
 			"src/helpers.php"

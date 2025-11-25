@@ -23,16 +23,29 @@ Install the package via Composer:
 composer require rdcstarr/laravel-settings
 ```
 
-1. **Publish migrations files** (optional):
+### Automatic Installation (Recommended)
 
-    ```bash
-    php artisan vendor:publish --provider="Rdcstarr\Settings\SettingsServiceProvider"
-    ```
+Run the install command to publish and run the migrations:
 
-2. **Migrate** (required):
-    ```bash
-    php artisan migrate
-    ```
+```bash
+php artisan settings:install
+```
+
+### Manual Installation
+
+Alternatively, you can install manually:
+
+1. Publish the migrations:
+
+```bash
+php artisan vendor:publish --provider="Rdcstarr\Settings\SettingsServiceProvider" --tag="laravel-settings-migrations"
+```
+
+2. Run the migrations:
+
+```bash
+php artisan migrate
+```
 
 ## 🛠️ Artisan Commands
 

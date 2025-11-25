@@ -38,7 +38,7 @@ Alternatively, you can install manually:
 1. Publish the migrations:
 
 ```bash
-php artisan vendor:publish --provider="Rdcstarr\Settings\SettingsServiceProvider" --tag="laravel-settings-migrations"
+php artisan vendor:publish --tag=settings-migrations
 ```
 
 2. Run the migrations:
